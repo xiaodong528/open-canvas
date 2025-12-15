@@ -24,6 +24,88 @@ const AZURE_MODELS: ModelConfigurationParams[] = [
 ];
 
 const OPENAI_MODELS: ModelConfigurationParams[] = [
+  // GPT-5.1 系列 (2025年11月发布)
+  {
+    name: "gpt-5.1",
+    label: "GPT 5.1",
+    config: {
+      provider: "openai",
+      temperatureRange: {
+        min: 0,
+        max: 1,
+        default: 0.5,
+        current: 0.5,
+      },
+      maxTokens: {
+        min: 1,
+        max: 128_000,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: true,
+  },
+  // GPT-5 系列 (2025年8月发布)
+  {
+    name: "gpt-5",
+    label: "GPT 5",
+    config: {
+      provider: "openai",
+      temperatureRange: {
+        min: 0,
+        max: 1,
+        default: 0.5,
+        current: 0.5,
+      },
+      maxTokens: {
+        min: 1,
+        max: 128_000,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: false,
+  },
+  {
+    name: "gpt-5-mini",
+    label: "GPT 5 mini",
+    config: {
+      provider: "openai",
+      temperatureRange: {
+        min: 0,
+        max: 1,
+        default: 0.5,
+        current: 0.5,
+      },
+      maxTokens: {
+        min: 1,
+        max: 128_000,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: false,
+  },
+  {
+    name: "gpt-5-nano",
+    label: "GPT 5 nano",
+    config: {
+      provider: "openai",
+      temperatureRange: {
+        min: 0,
+        max: 1,
+        default: 0.5,
+        current: 0.5,
+      },
+      maxTokens: {
+        min: 1,
+        max: 32_768,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: false,
+  },
   {
     name: "gpt-4.1",
     label: "GPT 4.1",
@@ -42,7 +124,7 @@ const OPENAI_MODELS: ModelConfigurationParams[] = [
         current: 4_096,
       },
     },
-    isNew: true,
+    isNew: false,
   },
   {
     name: "gpt-4.1-mini",
@@ -62,7 +144,7 @@ const OPENAI_MODELS: ModelConfigurationParams[] = [
         current: 4_096,
       },
     },
-    isNew: true,
+    isNew: false,
   },
   {
     name: "o4-mini",
@@ -82,7 +164,7 @@ const OPENAI_MODELS: ModelConfigurationParams[] = [
         current: 4_096,
       },
     },
-    isNew: true,
+    isNew: false,
   },
   {
     name: "gpt-4o",
@@ -125,68 +207,8 @@ const OPENAI_MODELS: ModelConfigurationParams[] = [
     isNew: false,
   },
   {
-    name: "gpt-4.5-preview",
-    label: "GPT 4.5",
-    config: {
-      provider: "openai",
-      temperatureRange: {
-        min: 0,
-        max: 1,
-        default: 0.5,
-        current: 0.5,
-      },
-      maxTokens: {
-        min: 1,
-        max: 16_384,
-        default: 4_096,
-        current: 4_096,
-      },
-    },
-    isNew: false,
-  },
-  {
     name: "o3-mini",
     label: "o3 mini",
-    config: {
-      provider: "openai",
-      temperatureRange: {
-        min: 0,
-        max: 1,
-        default: 0.5,
-        current: 0.5,
-      },
-      maxTokens: {
-        min: 1,
-        max: 100_000,
-        default: 4_096,
-        current: 4_096,
-      },
-    },
-    isNew: false,
-  },
-  {
-    name: "o1-mini",
-    label: "o1 mini",
-    config: {
-      provider: "openai",
-      temperatureRange: {
-        min: 0,
-        max: 1,
-        default: 0.5,
-        current: 0.5,
-      },
-      maxTokens: {
-        min: 1,
-        max: 65_536,
-        default: 4_096,
-        current: 4_096,
-      },
-    },
-    isNew: false,
-  },
-  {
-    name: "o1",
-    label: "o1",
     config: {
       provider: "openai",
       temperatureRange: {
@@ -233,6 +255,68 @@ const OLLAMA_MODELS = [
 ];
 
 const ANTHROPIC_MODELS = [
+  // Claude 4.5 系列 (2025年最新)
+  {
+    name: "claude-sonnet-4-5",
+    label: "Claude Sonnet 4.5",
+    config: {
+      provider: "anthropic",
+      temperatureRange: {
+        min: 0,
+        max: 1,
+        default: 0.5,
+        current: 0.5,
+      },
+      maxTokens: {
+        min: 1,
+        max: 64_000,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: true,
+  },
+  {
+    name: "claude-opus-4-5",
+    label: "Claude Opus 4.5",
+    config: {
+      provider: "anthropic",
+      temperatureRange: {
+        min: 0,
+        max: 1,
+        default: 0.5,
+        current: 0.5,
+      },
+      maxTokens: {
+        min: 1,
+        max: 32_000,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: true,
+  },
+  {
+    name: "claude-haiku-4-5",
+    label: "Claude Haiku 4.5",
+    config: {
+      provider: "anthropic",
+      temperatureRange: {
+        min: 0,
+        max: 1,
+        default: 0.5,
+        current: 0.5,
+      },
+      maxTokens: {
+        min: 1,
+        max: 8_192,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: true,
+  },
+  // Claude 4 系列
   {
     name: "claude-sonnet-4-0",
     label: "Claude Sonnet 4",
@@ -251,7 +335,7 @@ const ANTHROPIC_MODELS = [
         current: 4_096,
       },
     },
-    isNew: true,
+    isNew: false,
   },
   {
     name: "claude-opus-4-0",
@@ -271,7 +355,7 @@ const ANTHROPIC_MODELS = [
         current: 4_096,
       },
     },
-    isNew: true,
+    isNew: false,
   },
   {
     name: "claude-3-7-sonnet-latest",
@@ -564,25 +648,17 @@ const GEMINI_MODELS: ModelConfigurationParams[] = [
   },
 ];
 
-export const LANGCHAIN_USER_ONLY_MODELS = [
-  "o1",
-  "gpt-4o",
-  "gpt-4.5-preview",
-  "claude-3-5-sonnet-latest",
-  "claude-3-7-sonnet-latest",
-  "gemini-2.0-flash-thinking-exp-01-21",
-  "gemini-2.5-pro-preview-05-06",
-  "claude-sonnet-4-0",
-  "claude-opus-4-0",
-  "gpt-4.1",
-];
+// Previously restricted to @langchain.dev users, now available to all users
+export const LANGCHAIN_USER_ONLY_MODELS: string[] = [];
 
-// Models which do NOT support the temperature parameter.
+// Models which do NOT support the temperature parameter (and require max_completion_tokens instead of max_tokens).
 export const TEMPERATURE_EXCLUDED_MODELS = [
-  "o1-mini",
   "o3-mini",
-  "o1",
   "o4-mini",
+  "gpt-5.1",
+  "gpt-5",
+  "gpt-5-mini",
+  "gpt-5-nano",
 ];
 
 // Models which do NOT stream back tool calls.
@@ -595,7 +671,6 @@ export const NON_STREAMING_TOOL_CALLING_MODELS = [
 
 // Models which do NOT stream back text.
 export const NON_STREAMING_TEXT_MODELS = [
-  "o1",
   "gemini-2.0-flash-thinking-exp-01-21",
 ];
 
@@ -631,9 +706,9 @@ export type ALL_MODEL_NAMES =
   | OLLAMA_MODEL_NAMES
   | GROQ_MODEL_NAMES;
 
-export const DEFAULT_MODEL_NAME: ALL_MODEL_NAMES = OPENAI_MODELS[1].name;
+export const DEFAULT_MODEL_NAME: ALL_MODEL_NAMES = OPENAI_MODELS[0].name;
 export const DEFAULT_MODEL_CONFIG: CustomModelConfig = {
-  ...OPENAI_MODELS[1].config,
-  temperatureRange: { ...OPENAI_MODELS[1].config.temperatureRange },
-  maxTokens: { ...OPENAI_MODELS[1].config.maxTokens },
+  ...OPENAI_MODELS[0].config,
+  temperatureRange: { ...OPENAI_MODELS[0].config.temperatureRange },
+  maxTokens: { ...OPENAI_MODELS[0].config.maxTokens },
 };

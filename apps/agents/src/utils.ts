@@ -213,7 +213,8 @@ export const getModelConfig = (
   if (
     customModelName.includes("gpt-") ||
     customModelName.includes("o1") ||
-    customModelName.includes("o3")
+    customModelName.includes("o3") ||
+    customModelName.includes("o4")
   ) {
     let actualModelName = providerConfig.modelName;
     if (extra?.isToolCalling && actualModelName.includes("o1")) {
@@ -383,6 +384,19 @@ export async function getModelFromConfig(
     (m) => m === modelName
   );
 
+  // For Anthropic models, we use invocationKwargs to override the library's
+  // default top_p=-1 which causes API errors. Setting top_p to undefined in
+  // invocationKwargs will spread at the end and override the default value.
+  const anthropicParams =
+    modelProvider === "anthropic"
+      ? {
+          invocationKwargs: {
+            top_p: undefined,
+            top_k: undefined,
+          },
+        }
+      : {};
+
   return await initChatModel(modelName, {
     modelProvider,
     // Certain models (e.g., OpenAI o1) do not support passing the temperature param.
@@ -405,6 +419,7 @@ export async function getModelFromConfig(
           azureOpenAIBasePath: azureConfig.azureOpenAIBasePath,
         }
       : {}),
+    ...anthropicParams,
   });
 }
 

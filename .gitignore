@@ -46,6 +46,7 @@ credentials.json
 # LangGraph API
 .langgraph_api
 .claude
+.claudedocs
 .playwright-mcp
 .serena
 CLAUDE.md

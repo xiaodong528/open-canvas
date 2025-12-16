@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Canvas - React App Artifact 工作流程图</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #1a1a1a;
+      border-bottom: 3px solid #6366f1;
+      padding-bottom: 15px;
+    }
+    h2 {
+      color: #4f46e5;
+      margin-top: 40px;
+      padding: 10px 15px;
+      background: linear-gradient(90deg, #eef2ff, transparent);
+      border-left: 4px solid #6366f1;
+    }
+    .diagram-container {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin: 20px 0;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .description {
+      background: #f8fafc;
+      border-left: 4px solid #22c55e;
+      padding: 15px 20px;
+      margin: 15px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .description h4 {
+      margin: 0 0 10px 0;
+      color: #16a34a;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      padding: 15px;
+      background: #fefce8;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+    }
+    .toc {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .toc h3 {
+      margin-top: 0;
+      color: #4f46e5;
+    }
+    .toc ul {
+      list-style: none;
+      padding: 0;
+    }
+    .toc li {
+      padding: 8px 0;
+      border-bottom: 1px dashed #e5e7eb;
+    }
+    .toc a {
+      color: #4f46e5;
+      text-decoration: none;
+    }
+    .toc a:hover {
+      text-decoration: underline;
+    }
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Open Canvas - React App Artifact 工作流程图</h1>
+
+  <div class="toc">
+    <h3>目录</h3>
+    <ul>
+      <li><a href="#architecture">1. 系统架构概览</a></li>
+      <li><a href="#sequence">2. Artifact 生成时序图</a></li>
+      <li><a href="#routing">3. Agent 路由决策流程</a></li>
+      <li><a href="#modification">4. 代码修改流程</a></li>
+      <li><a href="#versioning">5. 版本管理状态图</a></li>
+      <li><a href="#rendering">6. 前端渲染组件树</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 系统架构概览 -->
+  <h2 id="architecture">1. 系统架构概览</h2>
+  <div class="diagram-container">
+    <div class="description">
+      <h4>说明</h4>
+      <p>Open Canvas 采用前后端分离架构。前端使用 Next.js + Web Worker 处理流式响应，后端使用 LangGraph Server 运行 AI Agent 图。</p>
+    </div>
+    <div class="mermaid">
+flowchart TB
+    subgraph Frontend["前端 (Next.js)"]
+        UI["用户界面"]
+        Composer["ContentComposer<br/>用户输入"]
+        GC["GraphContext<br/>状态管理"]
+        SW["StreamWorker<br/>Web Worker"]
+        AR["ArtifactRenderer<br/>渲染引擎"]
+
+        UI --> Composer
+        Composer --> GC
+        GC --> SW
+        GC --> AR
+    end
+
+    subgraph Backend["后端 (LangGraph Server)"]
+        GP["generatePath<br/>路由决策"]
+        GA["generateArtifact<br/>生成新 Artifact"]
+        RA["rewriteArtifact<br/>重写 Artifact"]
+        UA["updateArtifact<br/>更新高亮代码"]
+        GF["generateFollowup<br/>后续响应"]
+        RF["reflect<br/>记忆更新"]
+
+        GP --> GA
+        GP --> RA
+        GP --> UA
+        GA --> GF
+        RA --> GF
+        UA --> GF
+        GF --> RF
+    end
+
+    subgraph LLM["LLM 服务"]
+        OpenAI["OpenAI"]
+        Anthropic["Anthropic"]
+        Gemini["Gemini"]
+    end
+
+    SW <-->|"Streaming"| GP
+    GA --> LLM
+    RA --> LLM
+    UA --> LLM
+
+    style Frontend fill:#e0f2fe,stroke:#0284c7
+    style Backend fill:#fef3c7,stroke:#d97706
+    style LLM fill:#f3e8ff,stroke:#9333ea
+    </div>
+  </div>
+
+  <!-- 2. Artifact 生成时序图 -->
+  <h2 id="sequence">2. Artifact 生成时序图</h2>
+  <div class="diagram-container">
+    <div class="description">
+      <h4>说明</h4>
+      <p>展示用户输入"创建一个 React 计数器"后，系统各组件之间的交互时序。注意流式响应的处理方式。</p>
+    </div>
+    <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant C as Composer
+    participant G as GraphContext
+    participant W as StreamWorker
+    participant L as LangGraph Server
+    participant M as LLM
+    participant R as ArtifactRenderer
+
+    U->>C: 输入 "创建 React 计数器"
+    C->>G: handleSubmit(content)
+    G->>G: 创建 HumanMessage
+    G->>G: setMessages([...prev, msg])
+    G->>W: streamMessage(GraphInput)
+
+    W->>L: POST /runs/stream
+    L->>L: generatePath 路由
+    Note over L: 无 artifact → generateArtifact
+
+    L->>M: 调用 LLM (bindTools)
+    M-->>L: 返回 artifact JSON
+
+    loop Streaming Chunks
+        L-->>W: chunk (on_chat_model_stream)
+        W-->>G: 累积 JSON
+        G->>G: setArtifact(parsed)
+        G->>R: 触发重渲染
+    end
+
+    L->>L: generateFollowup
+    L-->>W: 后续消息
+    W-->>G: setMessages
+
+    L->>L: reflect (更新 memories)
+
+    R->>R: CodeRenderer + CodePreviewer
+    R->>U: 显示代码 + React 预览
+    </div>
+  </div>
+
+  <!-- 3. Agent 路由决策流程 -->
+  <h2 id="routing">3. Agent 路由决策流程</h2>
+  <div class="diagram-container">
+    <div class="description">
+      <h4>说明</h4>
+      <p><code>generatePath</code> 节点根据输入状态的不同标志，按优先级顺序决定下一步执行哪个处理节点。</p>
+    </div>
+    <div class="mermaid">
+flowchart TD
+    START([用户输入]) --> GP{generatePath<br/>路由决策}
+
+    GP -->|"state.highlightedCode?"| HC{代码高亮?}
+    HC -->|Yes| UA["updateArtifact<br/>局部代码修改"]
+    HC -->|No| HT{文本高亮?}
+
+    HT -->|"state.highlightedText?"| UHT["updateHighlightedText<br/>局部文本修改"]
+    HT -->|No| QA{快捷操作?}
+
+    QA -->|"language/length/emojis"| RAT["rewriteArtifactTheme<br/>主题快捷操作"]
+    QA -->|"comments/logs/bugs"| RCAT["rewriteCodeArtifactTheme<br/>代码快捷操作"]
+    QA -->|No| CA{自定义操作?}
+
+    CA -->|"customQuickActionId"| CAct["customAction<br/>用户自定义"]
+    CA -->|No| WS{网络搜索?}
+
+    WS -->|"webSearchEnabled"| WebS["webSearch<br/>Exa 搜索"]
+    WS -->|No| DDP{动态决策}
+
+    DDP -->|"有 artifact"| RA["rewriteArtifact<br/>整体重写"]
+    DDP -->|"无 artifact"| GA["generateArtifact<br/>生成新的"]
+    DDP -->|"仅对话"| RGI["replyToGeneralInput<br/>普通回复"]
+
+    UA --> GF["generateFollowup"]
+    UHT --> GF
+    RAT --> GF
+    RCAT --> GF
+    CAct --> GF
+    RA --> GF
+    GA --> GF
+
+    GF --> RF["reflect<br/>更新 memories"]
+    RF --> END([返回响应])
+
+    style GP fill:#fef3c7,stroke:#d97706,stroke-width:2px
+    style GA fill:#dcfce7,stroke:#16a34a
+    style RA fill:#dbeafe,stroke:#2563eb
+    style UA fill:#fce7f3,stroke:#db2777
+    style GF fill:#e0e7ff,stroke:#4f46e5
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background:#fef3c7;border:2px solid #d97706"></div>
+        <span>路由决策节点</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background:#dcfce7;border:2px solid #16a34a"></div>
+        <span>生成新 Artifact</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background:#dbeafe;border:2px solid #2563eb"></div>
+        <span>重写 Artifact</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background:#fce7f3;border:2px solid #db2777"></div>
+        <span>局部更新</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 代码修改流程 -->
+  <h2 id="modification">4. 代码修改流程</h2>
+  <div class="diagram-container">
+    <div class="description">
+      <h4>说明</h4>
+      <p>展示三种代码修改模式的详细处理流程：整体重写、高亮代码修改、高亮文本修改。</p>
+    </div>
+    <div class="mermaid">
+flowchart LR
+    subgraph Input["用户输入"]
+        M1["常规对话<br/>'添加新功能'"]
+        M2["代码高亮<br/>'修改这个函数'"]
+        M3["文本高亮<br/>'改写这段话'"]
+    end
+
+    subgraph Process["处理节点"]
+        RA["rewriteArtifact"]
+        UA["updateArtifact"]
+        UHT["updateHighlightedText"]
+    end
+
+    subgraph Method["处理方法"]
+        RA1["1. 获取完整 artifact"]
+        RA2["2. 构建 prompt + memories"]
+        RA3["3. LLM 重新生成全部"]
+        RA4["4. 创建新版本"]
+
+        UA1["1. 提取高亮 + 前后 500 字"]
+        UA2["2. LLM 仅修改高亮部分"]
+        UA3["3. 拼接: before + new + after"]
+        UA4["4. 创建新版本"]
+
+        UHT1["1. 提取高亮所在 Markdown 块"]
+        UHT2["2. LLM 重写整个块"]
+        UHT3["3. 替换原块"]
+        UHT4["4. 创建新版本"]
+    end
+
+    subgraph Output["输出"]
+        V["新版本 Artifact<br/>currentIndex + 1"]
+    end
+
+    M1 --> RA
+    M2 --> UA
+    M3 --> UHT
+
+    RA --> RA1 --> RA2 --> RA3 --> RA4
+    UA --> UA1 --> UA2 --> UA3 --> UA4
+    UHT --> UHT1 --> UHT2 --> UHT3 --> UHT4
+
+    RA4 --> V
+    UA4 --> V
+    UHT4 --> V
+
+    style RA fill:#dbeafe,stroke:#2563eb
+    style UA fill:#fce7f3,stroke:#db2777
+    style UHT fill:#d1fae5,stroke:#059669
+    style V fill:#fef3c7,stroke:#d97706
+    </div>
+  </div>
+
+  <!-- 5. 版本管理状态图 -->
+  <h2 id="versioning">5. 版本管理状态图</h2>
+  <div class="diagram-container">
+    <div class="description">
+      <h4>说明</h4>
+      <p>ArtifactV3 使用 <code>contents[]</code> 数组存储所有历史版本，<code>currentIndex</code> 指向当前显示的版本。每次修改都追加新版本，支持任意版本切换。</p>
+    </div>
+    <div class="mermaid">
+stateDiagram-v2
+    [*] --> Empty: 初始状态
+
+    Empty --> V1: generateArtifact
+    note right of V1
+        contents: [v1]
+        currentIndex: 1
+    end note
+
+    V1 --> V2: rewriteArtifact
+    note right of V2
+        contents: [v1, v2]
+        currentIndex: 2
+    end note
+
+    V2 --> V3: updateArtifact
+    note right of V3
+        contents: [v1, v2, v3]
+        currentIndex: 3
+    end note
+
+    V3 --> V2: 用户点击 ←
+    V2 --> V1: 用户点击 ←
+    V1 --> V2: 用户点击 →
+    V2 --> V3: 用户点击 →
+
+    V3 --> V4: 继续修改
+    note right of V4
+        contents: [v1, v2, v3, v4]
+        currentIndex: 4
+    end note
+    </div>
+
+    <div class="mermaid">
+flowchart LR
+    subgraph ArtifactV3["ArtifactV3 数据结构"]
+        CI["currentIndex: 3"]
+        subgraph Contents["contents[]"]
+            V1["index: 1<br/>code: 'v1...'"]
+            V2["index: 2<br/>code: 'v2...'"]
+            V3["index: 3<br/>code: 'v3...'<br/>✓ 当前显示"]
+        end
+    end
+
+    UI["版本导航 UI<br/>[←] 3/3 [→]"]
+
+    UI -->|"setSelectedArtifact(2)"| CI
+
+    style V3 fill:#dcfce7,stroke:#16a34a,stroke-width:2px
+    </div>
+  </div>
+
+  <!-- 6. 前端渲染组件树 -->
+  <h2 id="rendering">6. 前端渲染组件树</h2>
+  <div class="diagram-container">
+    <div class="description">
+      <h4>说明</h4>
+      <p>展示前端 Artifact 渲染的组件层次结构。根据 <code>type</code> 字段决定渲染代码还是文本，React 代码额外显示 <code>react-live</code> 预览。</p>
+    </div>
+    <div class="mermaid">
+flowchart TB
+    subgraph GraphContext["GraphContext (状态管理)"]
+        artifact["artifact: ArtifactV3"]
+        isStreaming["isStreaming: boolean"]
+    end
+
+    subgraph ArtifactRenderer["ArtifactRenderer"]
+        Header["ArtifactHeader<br/>标题 + 版本导航"]
+        TypeCheck{type?}
+    end
+
+    subgraph CodeBranch["代码渲染分支"]
+        CR["CodeRenderer"]
+        CM["CodeMirror<br/>代码编辑器"]
+        Toggle["ToggleCodePreview<br/>预览切换按钮"]
+        CP["CodePreviewer"]
+        LP["LiveProvider<br/>(react-live)"]
+        LPrev["LivePreview<br/>实时渲染"]
+        LErr["LiveError<br/>错误显示"]
+    end
+
+    subgraph TextBranch["文本渲染分支"]
+        TR["TextRenderer"]
+        BN["BlockNote<br/>富文本编辑器"]
+    end
+
+    artifact --> ArtifactRenderer
+    isStreaming --> ArtifactRenderer
+
+    ArtifactRenderer --> Header
+    ArtifactRenderer --> TypeCheck
+
+    TypeCheck -->|"type === 'code'"| CR
+    TypeCheck -->|"type === 'text'"| TR
+
+    CR --> CM
+    CR --> Toggle
+    CR -->|"isValidReact && !isStreaming"| CP
+
+    CP --> LP
+    LP --> LPrev
+    LP --> LErr
+
+    TR --> BN
+
+    style GraphContext fill:#e0f2fe,stroke:#0284c7
+    style CR fill:#dbeafe,stroke:#2563eb
+    style CP fill:#dcfce7,stroke:#16a34a
+    style TR fill:#fef3c7,stroke:#d97706
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background:#e0f2fe;border:2px solid #0284c7"></div>
+        <span>状态管理</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background:#dbeafe;border:2px solid #2563eb"></div>
+        <span>代码编辑</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background:#dcfce7;border:2px solid #16a34a"></div>
+        <span>React 预览</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background:#fef3c7;border:2px solid #d97706"></div>
+        <span>文本编辑</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Open Canvas React App Artifact 工作流程图</p>
+    <p>生成时间: 2025-12-15 | 项目分支: main</p>
+  </footer>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      },
+      sequence: {
+        useMaxWidth: true,
+        showSequenceNumbers: true
+      }
+    });
+  </script>
+</body>
+</html>

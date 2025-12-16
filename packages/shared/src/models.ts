@@ -24,6 +24,27 @@ const AZURE_MODELS: ModelConfigurationParams[] = [
 ];
 
 const OPENAI_MODELS: ModelConfigurationParams[] = [
+  // GPT-5.2 系列 (2025年12月发布)
+  {
+    name: "gpt-5.2",
+    label: "GPT 5.2",
+    config: {
+      provider: "openai",
+      temperatureRange: {
+        min: 0,
+        max: 1,
+        default: 0.5,
+        current: 0.5,
+      },
+      maxTokens: {
+        min: 1,
+        max: 128_000,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: true,
+  },
   // GPT-5.1 系列 (2025年11月发布)
   {
     name: "gpt-5.1",
@@ -43,7 +64,7 @@ const OPENAI_MODELS: ModelConfigurationParams[] = [
         current: 4_096,
       },
     },
-    isNew: true,
+    isNew: false,
   },
   // GPT-5 系列 (2025年8月发布)
   {
@@ -547,6 +568,26 @@ const GROQ_MODELS: ModelConfigurationParams[] = [
 
 const GEMINI_MODELS: ModelConfigurationParams[] = [
   {
+    name: "gemini-3-pro-preview",
+    label: "Gemini 3 Pro (Preview)",
+    config: {
+      provider: "google-genai",
+      temperatureRange: {
+        min: 0,
+        max: 1,
+        default: 0.5,
+        current: 0.5,
+      },
+      maxTokens: {
+        min: 1,
+        max: 65_536,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: true,
+  },
+  {
     name: "gemini-2.5-flash-preview-05-20",
     label: "Gemini 2.5 Flash (Preview)",
     config: {
@@ -655,6 +696,7 @@ export const LANGCHAIN_USER_ONLY_MODELS: string[] = [];
 export const TEMPERATURE_EXCLUDED_MODELS = [
   "o3-mini",
   "o4-mini",
+  "gpt-5.2",
   "gpt-5.1",
   "gpt-5",
   "gpt-5-mini",
@@ -667,6 +709,7 @@ export const NON_STREAMING_TOOL_CALLING_MODELS = [
   "gemini-1.5-flash",
   "gemini-2.5-pro-preview-05-06",
   "gemini-2.5-flash-preview-05-20",
+  "gemini-3-pro-preview",
 ];
 
 // Models which do NOT stream back text.

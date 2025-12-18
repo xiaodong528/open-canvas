@@ -13,7 +13,7 @@
 |-------|------|--------|-----------|------|
 | 1 | 项目初始化 | 8 | `/ok` 返回 `{"ok":true}` | ✅ |
 | 2 | 共享组件 | 3 | types/utils 可 import | ✅ |
-| 3 | 主图 - State & Prompts | 3 | State 字段与 TS 对齐 | ⬜ |
+| 3 | 主图 - State & Prompts | 3 | State 字段与 TS 对齐 | ✅ |
 | 4 | 主图 - 节点函数 | 12 | 所有节点函数可调用 | ⬜ |
 | 5 | 主图 - 控制流 | 5 | 图可编译，路由正确 | ⬜ |
 | 6 | 辅助图 | 4 | 4 个子图全部可用 | ⬜ |
@@ -34,10 +34,10 @@
 | **async vs sync 占位节点** | invoke() 失败 | Phase 1 | ✅ 已解决 |
 | **SearchResult 字段格式** | 前端无法解析搜索结果 | Phase 1 | ✅ 已解决 |
 | **camelCase 字段名** | 前端无法识别状态 | Phase 2, 3 | ⚠️ 需注意 |
-| **`_messages` reducer** | 上下文无限增长 | Phase 3 | ⬜ 待实现 |
+| **`_messages` reducer** | 上下文无限增长 | Phase 3 | ✅ 已实现 |
 | **`DEFAULT_INPUTS` 重置** | 状态污染下一轮 | Phase 2, 5 | ⬜ 待实现 |
 | **路由条件边** | 路由丢失/错误 | Phase 5 | ⬜ 待实现 |
-| **`messages` vs `_messages`** | 模型上下文错误 | Phase 3, 4 | ⬜ 待实现 |
+| **`messages` vs `_messages`** | 模型上下文错误 | Phase 3, 4 | 🔄 Phase 3 完成 |
 | **CHARACTER_MAX 阈值** | 摘要永不触发 | Phase 5 | ⬜ 待实现 |
 
 ### Phase 1 已解决的问题
@@ -232,15 +232,15 @@
 
 ---
 
-## Phase 3: 主图 - State & Prompts
+## Phase 3: 主图 - State & Prompts ✅
 
 **目标**: 迁移主图的 State 定义和 Prompt 模板
 
-**Gate 条件**: State 字段与 TS `apps/agents/src/open-canvas/state.ts` 完全对齐
+**Gate 条件**: State 字段与 TS `apps/agents/src/open-canvas/state.ts` 完全对齐 ✅
 
 ### 任务清单
 
-- [ ] **3.1 创建 open_canvas/state.py**
+- [x] **3.1 创建 open_canvas/state.py**
   - 参考 TS: `apps/agents/src/open-canvas/state.ts` (140 行)
   - ⚠️ **关键**: 字段名必须 camelCase，与以下列表完全一致:
 
@@ -266,7 +266,7 @@
       webSearchResults: Optional[list[SearchResult]]
   ```
 
-- [ ] **3.2 实现 `_messages` reducer**
+- [x] **3.2 实现 `_messages` reducer**
   - 参考 TS: `apps/agents/src/open-canvas/state.ts` 第 24-71 行
   - ⚠️ **关键逻辑**: 遇到摘要消息时清空历史再追加
   ```python
@@ -288,9 +288,28 @@
       return add_messages(left, right_list)
   ```
 
-- [ ] **3.3 创建 open_canvas/prompts.py**
+- [x] **3.3 创建 open_canvas/prompts.py**
   - 参考 TS: `apps/agents/src/open-canvas/prompts.ts` (374 行)
   - 迁移所有 Prompt 模板（保持动态变量占位符一致）
+
+### 审查总结（2025-12-18）
+
+**Gate 条件验证结果**
+- ✅ **camelCase 字段名**: `apps/agents-py/src/open_canvas/state.py` 与 TS 保持一致（未发现 snake_case 字段）
+- ✅ **`_messages` reducer**: 检测到摘要消息（`OC_SUMMARIZED_MESSAGE_KEY`）时清空历史再追加，逻辑与 TS 一致
+- ⚠️ **类型注解与 TS 对齐**: TS 中 `artifact` 为 `Annotation<ArtifactV3>`（非 `undefined`），Python 当前为 `Optional[ArtifactV3]` 且 `TypedDict(total=False)`；另 `OpenCanvasGraphReturnType` 目前为 `dict[str, Any]`，更贴近 TS 的写法应为 `OpenCanvasState`（即“Partial State”语义）
+- ✅ **`add_messages` 导入与使用**: 已从 `langgraph.graph.message` 导入并通过 `Annotated[..., add_messages]` 使用（符合 LangGraph 官方示例）
+
+**迁移质量评估**
+- **State**: 高（关键 reducer 行为已对齐；存在少量类型语义偏差）
+- **Prompts**: 高（模板数量齐全、占位符格式正确、XML 标签结构已与 TS 对齐）
+
+**发现的问题**
+- ✅ ~~**Prompts XML 标签结构未完全保持不变**~~: 已修复，Python 版本现与 TS 保持一致（`</rules-guidelines>` 开头）
+
+**改进建议**
+- ✅ ~~迁移一致性~~: 已选择"保持 TS 原样"方案，Python 与 TS 现已一致
+- Prompts 中对占位符使用 f-string 时继续严格使用 `{{placeholder}}` 输出 `{placeholder}`，并建议增加最小化的字符串一致性校验（例如断言关键 XML 片段存在）
 
 **参考文件**:
 - TS 源码: `apps/agents/src/open-canvas/state.ts`

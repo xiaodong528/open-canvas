@@ -303,8 +303,8 @@ def get_model_config(
             "apiKey": os.environ.get("ANTHROPIC_API_KEY"),
         }
 
-    # Fireworks
-    if custom_model_name.startswith("fireworks/"):
+    # Fireworks (accounts/fireworks/models/xxx 格式)
+    if "fireworks/" in custom_model_name:
         actual_model_name = custom_model_name
         if is_tool_calling and actual_model_name != "accounts/fireworks/models/llama-v3p3-70b-instruct":
             actual_model_name = "accounts/fireworks/models/llama-v3p3-70b-instruct"

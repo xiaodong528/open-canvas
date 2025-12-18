@@ -13,6 +13,15 @@ from langchain_core.messages import AIMessage, BaseMessage
 from langgraph.store.base import BaseStore
 from langgraph.types import RunnableConfig
 
+from .constants import (
+    CONTEXT_DOCUMENTS_NAMESPACE,
+    DEFAULT_INPUTS,
+    OC_HIDE_FROM_UI_KEY,
+    OC_SUMMARIZED_MESSAGE_KEY,
+    OC_WEB_SEARCH_RESULTS_MESSAGE_KEY,
+    PROGRAMMING_LANGUAGES,
+    TEMPERATURE_EXCLUDED_MODELS,
+)
 from .types import (
     ArtifactCodeV3,
     ArtifactMarkdownV3,
@@ -20,42 +29,6 @@ from .types import (
     Reflections,
     SearchResult,
 )
-
-# ============================================
-# 常量定义 - 与 TypeScript 版本保持一致
-# ============================================
-
-OC_SUMMARIZED_MESSAGE_KEY = "__oc_summarized_message"
-OC_HIDE_FROM_UI_KEY = "__oc_hide_from_ui"
-OC_WEB_SEARCH_RESULTS_MESSAGE_KEY = "__oc_web_search_results_message"
-
-CONTEXT_DOCUMENTS_NAMESPACE = ["context_documents"]
-
-# 默认输入值 - camelCase
-DEFAULT_INPUTS: dict[str, Any] = {
-    "highlightedCode": None,
-    "highlightedText": None,
-    "next": None,
-    "language": None,
-    "artifactLength": None,
-    "regenerateWithEmojis": None,
-    "readingLevel": None,
-    "addComments": None,
-    "addLogs": None,
-    "fixBugs": None,
-    "portLanguage": None,
-    "customQuickActionId": None,
-    "webSearchEnabled": None,
-    "webSearchResults": None,
-}
-
-# 不支持温度参数的模型
-TEMPERATURE_EXCLUDED_MODELS = [
-    "o1-preview",
-    "o1",
-    "o1-mini",
-    "o3-mini",
-]
 
 
 # ============================================
@@ -361,27 +334,59 @@ def get_model_from_config(
     Args:
         config: LangGraph 运行配置
         is_tool_calling: 是否用于工具调用
-        temperature: 可选温度参数
-        max_tokens: 可选最大 token 数
+        temperature: 可选温度参数 (覆盖 modelConfig 默认值)
+        max_tokens: 可选最大 token 数 (覆盖 modelConfig 默认值)
 
     Returns:
         BaseChatModel 实例
+
+    Note:
+        - 从 modelConfig 读取默认值，extra 参数可覆盖
+        - 推理模型 (o1, o3 系列) 使用 max_completion_tokens 而非 max_tokens
+        - Anthropic 需要覆盖默认的 top_p/top_k 避免 API 错误
     """
     model_cfg = get_model_config(config, is_tool_calling)
     provider = model_cfg.get("modelProvider", "")
     model_name = model_cfg.get("modelName", "")
+    model_config = model_cfg.get("modelConfig")
+
+    # ============================================
+    # 从 modelConfig 读取默认值，extra 参数覆盖
+    # ============================================
+    final_temperature = temperature
+    if final_temperature is None and model_config:
+        temp_range = model_config.get("temperatureRange", {})
+        if temp_range:
+            final_temperature = temp_range.get("current", 0.5)
+
+    final_max_tokens = max_tokens
+    if final_max_tokens is None and model_config:
+        tokens_range = model_config.get("maxTokens", {})
+        if tokens_range:
+            final_max_tokens = tokens_range.get("current")
+
+    # ============================================
+    # 判断是否为推理模型 (使用 max_completion_tokens)
+    # ============================================
+    is_reasoning_model = model_name in TEMPERATURE_EXCLUDED_MODELS
 
     # 构建通用参数
-    kwargs: dict[str, Any] = {"model": model_name}
+    if is_reasoning_model:
+        # 推理模型: 不支持 temperature，使用 max_completion_tokens
+        kwargs: dict[str, Any] = {"model": model_name}
+        if final_max_tokens is not None:
+            kwargs["max_completion_tokens"] = final_max_tokens
+    else:
+        # 普通模型: 支持 temperature 和 max_tokens
+        kwargs = {"model": model_name}
+        if final_temperature is not None:
+            kwargs["temperature"] = final_temperature
+        if final_max_tokens is not None:
+            kwargs["max_tokens"] = final_max_tokens
 
-    # 处理温度参数
-    if temperature is not None and model_name not in TEMPERATURE_EXCLUDED_MODELS:
-        kwargs["temperature"] = temperature
-
-    if max_tokens is not None:
-        kwargs["max_tokens"] = max_tokens
-
+    # ============================================
     # 根据 provider 创建模型
+    # ============================================
     if provider == "openai":
         from langchain_openai import ChatOpenAI
 
@@ -404,7 +409,22 @@ def get_model_from_config(
     elif provider == "anthropic":
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(**kwargs)
+        # 重要: 覆盖 ChatAnthropic 默认的 top_p/top_k 避免 API 错误
+        # ChatAnthropic 默认设置 top_p=1, top_k=1，这会与某些 API 配置冲突
+        # 通过 model_kwargs 显式设置为 None 来覆盖
+        anthropic_kwargs = {
+            "model": model_name,
+            "model_kwargs": {
+                "top_p": None,
+                "top_k": None,
+            },
+        }
+        if not is_reasoning_model and final_temperature is not None:
+            anthropic_kwargs["temperature"] = final_temperature
+        if final_max_tokens is not None:
+            anthropic_kwargs["max_tokens"] = final_max_tokens
+
+        return ChatAnthropic(**anthropic_kwargs)
 
     elif provider == "google-genai":
         from langchain_google_genai import ChatGoogleGenerativeAI
@@ -496,18 +516,23 @@ def create_ai_message_from_web_results(web_results: list[SearchResult]) -> AIMes
     从网络搜索结果创建 AI 消息
 
     Args:
-        web_results: 搜索结果列表 (使用 camelCase 字段名)
+        web_results: 搜索结果列表 (嵌套结构: pageContent + metadata)
 
     Returns:
         包含搜索结果的 AIMessage
+
+    Note:
+        SearchResult 使用嵌套结构匹配 TS DocumentInterface<ExaMetadata>:
+        - pageContent: 顶层字段
+        - metadata: 包含 id, url, title, author, publishedDate 等
     """
     web_results_str = "\n\n".join(
         f"""<search-result
       index="{index}"
-      publishedDate="{r.get('publishedDate', 'Unknown')}"
-      author="{r.get('author', 'Unknown')}"
+      publishedDate="{r.get('metadata', {}).get('publishedDate', 'Unknown')}"
+      author="{r.get('metadata', {}).get('author', 'Unknown')}"
     >
-      [{r.get('title', 'Unknown title')}]({r.get('url', 'Unknown URL')})
+      [{r.get('metadata', {}).get('title', 'Unknown title')}]({r.get('metadata', {}).get('url', 'Unknown URL')})
       {r.get('pageContent', '')}
     </search-result>"""
         for index, r in enumerate(web_results)
@@ -526,23 +551,5 @@ def create_ai_message_from_web_results(web_results: list[SearchResult]) -> AIMes
     )
 
 
-# ============================================
-# 编程语言列表
-# ============================================
-
-PROGRAMMING_LANGUAGES = [
-    {"language": "typescript", "label": "TypeScript"},
-    {"language": "javascript", "label": "JavaScript"},
-    {"language": "cpp", "label": "C++"},
-    {"language": "java", "label": "Java"},
-    {"language": "php", "label": "PHP"},
-    {"language": "python", "label": "Python"},
-    {"language": "html", "label": "HTML"},
-    {"language": "sql", "label": "SQL"},
-    {"language": "json", "label": "JSON"},
-    {"language": "rust", "label": "Rust"},
-    {"language": "xml", "label": "XML"},
-    {"language": "clojure", "label": "Clojure"},
-    {"language": "csharp", "label": "C#"},
-    {"language": "other", "label": "Other"},
-]
+# 注意: PROGRAMMING_LANGUAGES 已移至 constants.py
+# 为保持向后兼容，通过 from .constants import PROGRAMMING_LANGUAGES 导入并重新导出

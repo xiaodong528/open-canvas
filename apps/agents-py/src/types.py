@@ -198,19 +198,39 @@ class ContextDocument(TypedDict, total=False):
 
 
 # ============================================
-# 搜索结果类型 (Exa) - camelCase 与前端一致
+# 搜索结果类型 (Exa) - 匹配 TS DocumentInterface<ExaMetadata>
 # ============================================
 
 
-class SearchResult(TypedDict):
-    """Exa 搜索结果 - 保持 camelCase 与 TS 完全一致"""
+class ExaMetadata(TypedDict, total=False):
+    """
+    Exa 搜索结果元数据
+
+    匹配 TypeScript: packages/shared/src/types.ts 中的 ExaMetadata
+    """
 
     id: str
     url: str
     title: str
     author: str
     publishedDate: str
+    image: Optional[str]
+    favicon: Optional[str]
+
+
+class SearchResult(TypedDict):
+    """
+    搜索结果 - 匹配 TS DocumentInterface<ExaMetadata>
+
+    结构说明:
+    - pageContent: 页面内容 (顶层字段)
+    - metadata: ExaMetadata 对象 (嵌套结构)
+
+    这种嵌套结构与 LangChain Document 格式一致
+    """
+
     pageContent: str
+    metadata: ExaMetadata
 
 
 # ============================================

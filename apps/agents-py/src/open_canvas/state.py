@@ -21,7 +21,7 @@ from ..types import (
     SearchResult,
     TextHighlight,
 )
-from ..utils import OC_SUMMARIZED_MESSAGE_KEY
+from ..constants import OC_SUMMARIZED_MESSAGE_KEY
 
 
 # ============================================

@@ -12,7 +12,7 @@
 | Phase | 描述 | 任务数 | Gate 条件 | 状态 |
 |-------|------|--------|-----------|------|
 | 1 | 项目初始化 | 8 | `/ok` 返回 `{"ok":true}` | ✅ |
-| 2 | 共享组件 | 3 | types/utils 可 import | 🔄 |
+| 2 | 共享组件 | 3 | types/utils 可 import | ✅ |
 | 3 | 主图 - State & Prompts | 3 | State 字段与 TS 对齐 | ⬜ |
 | 4 | 主图 - 节点函数 | 12 | 所有节点函数可调用 | ⬜ |
 | 5 | 主图 - 控制流 | 5 | 图可编译，路由正确 | ⬜ |
@@ -161,15 +161,15 @@
 
 ---
 
-## Phase 2: 共享组件
+## Phase 2: 共享组件 ✅
 
 **目标**: 创建共享类型定义、常量和工具函数
 
-**Gate 条件**: `from src.types import *` 和 `from src.utils import *` 成功
+**Gate 条件**: `from src.types import *` 和 `from src.utils import *` 成功 ✅
 
 ### 任务清单
 
-- [ ] **2.1 创建 constants.py**
+- [x] **2.1 创建 constants.py**
   - 参考 TS: `packages/shared/src/constants.ts`
   - ⚠️ **关键**: 必须与 TS 完全一致
   ```python
@@ -200,7 +200,7 @@
   CHARACTER_MAX = 300000
   ```
 
-- [ ] **2.2 创建 types.py**
+- [x] **2.2 创建 types.py**
   - 参考 TS: `packages/shared/src/types.ts`
   - ⚠️ **关键**: 所有字段名必须保持 **camelCase**
   - 定义类型:
@@ -213,7 +213,7 @@
     - `ArtifactMarkdownV3`, `ArtifactCodeV3`, `ArtifactV3`
     - `SearchResult`
 
-- [ ] **2.3 创建 utils.py**
+- [x] **2.3 创建 utils.py**
   - 参考 TS: `apps/agents/src/utils.ts` (656 行)
   - 关键函数及其契约:
 

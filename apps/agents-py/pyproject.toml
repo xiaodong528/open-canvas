@@ -22,6 +22,12 @@ dependencies = [
     # 网络搜索
     "exa-py>=1.0.0",
 
+    # 文档处理
+    "pypdf>=4.0.0",
+
+    # URL 内容抓取 (可选)
+    "firecrawl-py>=1.0.0",
+
     # 工具库
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",

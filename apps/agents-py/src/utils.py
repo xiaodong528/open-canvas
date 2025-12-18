@@ -553,3 +553,338 @@ def create_ai_message_from_web_results(web_results: list[SearchResult]) -> AIMes
 
 # 注意: PROGRAMMING_LANGUAGES 已移至 constants.py
 # 为保持向后兼容，通过 from .constants import PROGRAMMING_LANGUAGES 导入并重新导出
+
+
+# ============================================
+# 思考模型辅助函数
+# ============================================
+
+
+def is_thinking_model(model_name: str) -> bool:
+    """
+    检测是否为思考模型 (执行 CoT 推理的模型)
+
+    Args:
+        model_name: 模型名称
+
+    Returns:
+        是否为思考模型
+    """
+    from .constants import THINKING_MODELS
+
+    return model_name in THINKING_MODELS
+
+
+def extract_thinking_and_response(text: str) -> tuple[str, str]:
+    """
+    从思考模型输出中提取 thinking 和 response 部分
+
+    支持流式输出 (标签可能不完整)
+
+    Args:
+        text: 模型输出文本
+
+    Returns:
+        (thinking, response) 元组
+
+    Examples:
+        >>> extract_thinking_and_response('Hello <think>processing...</think>world')
+        ('processing...', 'Hello world')
+
+        >>> extract_thinking_and_response('Hello <think>processing...')
+        ('processing...', 'Hello ')
+
+        >>> extract_thinking_and_response('Hello world')
+        ('', 'Hello world')
+    """
+    think_start_tag = "<think>"
+    think_end_tag = "</think>"
+
+    start_index = text.find(think_start_tag)
+
+    # 没有找到思考标签
+    if start_index == -1:
+        return ("", text.strip())
+
+    after_start_tag = text[start_index + len(think_start_tag) :]
+    end_index = after_start_tag.find(think_end_tag)
+
+    # 没有结束标签 - 剩余文本都是思考内容
+    if end_index == -1:
+        return (after_start_tag.strip(), text[:start_index].strip())
+
+    # 有开始和结束标签
+    thinking = after_start_tag[:end_index].strip()
+    response = (text[:start_index] + after_start_tag[end_index + len(think_end_tag) :]).strip()
+
+    return (thinking, response)
+
+
+# ============================================
+# PDF 转换和上下文文档处理
+# ============================================
+
+
+def clean_base64(base64_string: str) -> str:
+    """
+    清理 base64 字符串，移除 data URL 前缀
+
+    Args:
+        base64_string: 可能包含 data URL 前缀的 base64 字符串
+
+    Returns:
+        纯净的 base64 字符串
+    """
+    if "base64," in base64_string:
+        return base64_string.split("base64,", 1)[1]
+    return base64_string
+
+
+async def convert_pdf_to_text(base64_pdf: str) -> str:
+    """
+    将 base64 编码的 PDF 转换为文本
+
+    Args:
+        base64_pdf: Base64 编码的 PDF 数据
+
+    Returns:
+        提取的文本内容
+    """
+    import base64
+    from io import BytesIO
+
+    try:
+        from pypdf import PdfReader
+
+        cleaned_base64 = clean_base64(base64_pdf)
+        pdf_bytes = base64.b64decode(cleaned_base64)
+        pdf_reader = PdfReader(BytesIO(pdf_bytes))
+
+        text_parts = []
+        for page in pdf_reader.pages:
+            text_parts.append(page.extract_text() or "")
+
+        return "\n".join(text_parts)
+    except ImportError:
+        print("Warning: pypdf not installed, cannot convert PDF to text")
+        return ""
+    except Exception as e:
+        print(f"Error converting PDF to text: {e}")
+        raise
+
+
+async def create_context_document_messages_openai(
+    documents: list["ContextDocument"],
+) -> list[dict]:
+    """
+    为 OpenAI 模型创建上下文文档消息
+
+    OpenAI 不支持原生 PDF，所有文档转换为文本格式
+
+    Args:
+        documents: 上下文文档列表
+
+    Returns:
+        OpenAI 格式的消息内容列表
+    """
+    import base64
+
+    messages = []
+    for doc in documents:
+        text = ""
+        doc_type = doc.get("type", "")
+        doc_data = doc.get("data", "")
+
+        if doc_type == "application/pdf":
+            text = await convert_pdf_to_text(doc_data)
+        elif doc_type.startswith("text/"):
+            cleaned = clean_base64(doc_data)
+            text = base64.b64decode(cleaned).decode("utf-8")
+        elif doc_type == "text":
+            text = doc_data
+
+        if text:
+            messages.append({"type": "text", "text": text})
+
+    return messages
+
+
+async def create_context_document_messages_anthropic(
+    documents: list["ContextDocument"],
+    native_support: bool = False,
+) -> list[dict]:
+    """
+    为 Anthropic 模型创建上下文文档消息
+
+    Claude 3.5 Sonnet 支持原生 PDF，其他模型需要转换为文本
+
+    Args:
+        documents: 上下文文档列表
+        native_support: 是否支持原生 PDF (3.5 sonnet)
+
+    Returns:
+        Anthropic 格式的消息内容列表
+    """
+    import base64
+
+    messages = []
+    for doc in documents:
+        doc_type = doc.get("type", "")
+        doc_data = doc.get("data", "")
+
+        if doc_type == "application/pdf" and native_support:
+            # 原生 PDF 支持 - 使用 document 格式
+            messages.append({
+                "type": "document",
+                "source": {
+                    "type": "base64",
+                    "media_type": doc_type,
+                    "data": clean_base64(doc_data),
+                },
+            })
+        else:
+            # 转换为文本
+            text = ""
+            if doc_type == "application/pdf" and not native_support:
+                text = await convert_pdf_to_text(doc_data)
+            elif doc_type.startswith("text/"):
+                cleaned = clean_base64(doc_data)
+                text = base64.b64decode(cleaned).decode("utf-8")
+            elif doc_type == "text":
+                text = doc_data
+
+            if text:
+                messages.append({"type": "text", "text": text})
+
+    return messages
+
+
+def create_context_document_messages_gemini(
+    documents: list["ContextDocument"],
+) -> list[dict]:
+    """
+    为 Google Gemini 模型创建上下文文档消息
+
+    Gemini 支持原生 PDF 格式
+
+    Args:
+        documents: 上下文文档列表
+
+    Returns:
+        Gemini 格式的消息内容列表
+    """
+    import base64
+
+    messages = []
+    for doc in documents:
+        doc_type = doc.get("type", "")
+        doc_data = doc.get("data", "")
+
+        if doc_type == "application/pdf":
+            messages.append({
+                "type": doc_type,
+                "data": clean_base64(doc_data),
+            })
+        elif doc_type.startswith("text/"):
+            cleaned = clean_base64(doc_data)
+            text = base64.b64decode(cleaned).decode("utf-8")
+            messages.append({"type": "text", "text": text})
+        elif doc_type == "text":
+            messages.append({"type": "text", "text": doc_data})
+        else:
+            raise ValueError(f"Unsupported document type: {doc_type}")
+
+    return messages
+
+
+async def get_context_documents(config: RunnableConfig) -> list["ContextDocument"]:
+    """
+    从 store 获取上下文文档
+
+    Args:
+        config: LangGraph 运行配置
+
+    Returns:
+        上下文文档列表
+    """
+    store = config.get("store")
+    assistant_id = config.get("configurable", {}).get("assistant_id")
+
+    if not store or not assistant_id:
+        return []
+
+    result = await store.aget(CONTEXT_DOCUMENTS_NAMESPACE, assistant_id)
+    return result.value.get("documents", []) if result and result.value else []
+
+
+async def create_context_document_messages(
+    config: RunnableConfig,
+    context_documents: list["ContextDocument"] | None = None,
+) -> list[dict]:
+    """
+    为当前模型提供商创建上下文文档消息
+
+    根据模型提供商 (OpenAI/Anthropic/Gemini) 选择正确的文档格式。
+
+    Args:
+        config: LangGraph 配置 (包含模型信息)
+        context_documents: 可选的文档列表 (如果不提供，从 store 获取)
+
+    Returns:
+        包含 role='user' 和格式化文档内容的消息列表
+
+    Note:
+        返回格式:
+        [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Use the file(s)..."},
+                    ...document_messages...
+                ]
+            }
+        ]
+    """
+    from .types import ContextDocument
+
+    model_cfg = get_model_config(config)
+    model_provider = model_cfg.get("modelProvider", "")
+    model_name = model_cfg.get("modelName", "")
+
+    documents: list[ContextDocument] = list(context_documents) if context_documents else []
+    if not documents:
+        documents = await get_context_documents(config)
+
+    if not documents:
+        return []
+
+    # 根据提供商创建文档消息
+    context_doc_messages: list[dict] = []
+
+    if model_provider == "openai" or model_provider == "azure_openai":
+        context_doc_messages = await create_context_document_messages_openai(documents)
+    elif model_provider == "anthropic":
+        # Claude 3.5 Sonnet 支持原生 PDF
+        native_support = "3-5-sonnet" in model_name or "3.5-sonnet" in model_name
+        context_doc_messages = await create_context_document_messages_anthropic(
+            documents, native_support=native_support
+        )
+    elif model_provider == "google-genai":
+        context_doc_messages = create_context_document_messages_gemini(documents)
+
+    if not context_doc_messages:
+        return []
+
+    # 包装为用户消息
+    return [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Use the file(s) and/or text below as context when generating your response.",
+                },
+                *context_doc_messages,
+            ],
+        }
+    ]

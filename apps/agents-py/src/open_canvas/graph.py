@@ -3,66 +3,160 @@ Open Canvas 主代理图
 
 包含核心工作流：生成路径、工件管理、跟进消息等
 
-TODO Phase 2: 实现完整节点逻辑
+从 TypeScript 迁移: apps/agents/src/open-canvas/index.ts
 """
 
+from typing import Literal, cast
 from langgraph.graph import END, START, StateGraph
+from langgraph.store.base import BaseStore
+from langgraph.types import RunnableConfig
 
-from .state import OpenCanvasState
+from .state import OpenCanvasState, OpenCanvasGraphReturnType
+from .nodes import (
+    generate_followup,
+    reply_to_general_input,
+    reflect_node,
+    generate_title_node,
+    # 第二批
+    update_artifact,
+    update_highlighted_text,
+    rewrite_artifact_theme,
+    rewrite_code_artifact_theme,
+    # 第三批
+    generate_artifact,
+    rewrite_artifact,
+    custom_action,
+    # 第四批
+    generate_path,
+)
+from ..utils import DEFAULT_INPUTS
+from ..constants import CHARACTER_MAX
 
 
 # ============================================
-# 占位节点函数 - Phase 2 将实现完整逻辑
+# 辅助函数
 # ============================================
 
 
-def generate_path(state: OpenCanvasState) -> dict:
+def _calculate_message_chars(state: OpenCanvasState) -> int:
+    """计算 _messages 中的总字符数"""
+    total_chars = 0
+    for msg in state.get("_messages", []):
+        content = msg.content
+        if isinstance(content, str):
+            total_chars += len(content)
+        elif isinstance(content, list):
+            # 处理复杂内容结构
+            for c in content:
+                if isinstance(c, dict) and "text" in c:
+                    total_chars += len(c.get("text", ""))
+    return total_chars
+
+
+# ============================================
+# 路由函数
+# ============================================
+
+
+def route_after_generate_path(
+    state: OpenCanvasState,
+) -> Literal[
+    "updateArtifact",
+    "rewriteArtifactTheme",
+    "rewriteCodeArtifactTheme",
+    "replyToGeneralInput",
+    "generateArtifact",
+    "rewriteArtifact",
+    "customAction",
+    "updateHighlightedText",
+    "webSearch",
+]:
     """
-    路由决策节点 (同步占位)
+    根据 generatePath 设置的 next 字段路由到下一个节点
 
-    分析用户输入和当前状态，决定下一个处理节点。
-
-    TODO Phase 2:
-    - 检查 highlightedCode → updateArtifact
-    - 检查 highlightedText → updateHighlightedText
-    - 检查 language/artifactLength → rewriteArtifactTheme
-    - 检查 addComments/addLogs → rewriteCodeArtifactTheme
-    - 检查 customQuickActionId → customAction
-    - 检查 webSearchEnabled → webSearch
-    - 默认 → dynamicDeterminePath (LLM 决策)
+    Returns:
+        下一个节点名称
     """
-    # 占位实现：直接返回到 replyToGeneralInput
-    return {"next": "replyToGeneralInput"}
+    next_node = state.get("next")
+    if not next_node:
+        # 默认路由到一般回复
+        return "replyToGeneralInput"
+    return cast(str, next_node)
 
 
-def reply_to_general_input(state: OpenCanvasState) -> dict:
+def route_after_clean_state(
+    state: OpenCanvasState,
+) -> Literal["generateTitle", "summarizer", "__end__"]:
     """
-    普通输入回复节点 (同步占位)
+    清理状态后决定是否生成标题或摘要
 
-    处理不需要工件操作的一般对话。
-
-    TODO Phase 2: 实现 LLM 调用和响应生成
+    - 如果 messages <= 2，生成标题
+    - 如果字符数超过阈值，启动摘要
+    - 否则结束
     """
-    from langchain_core.messages import AIMessage
+    messages = state.get("messages", [])
 
+    # 首次对话时生成标题
+    if len(messages) <= 2:
+        return "generateTitle"
+
+    # 检查是否需要摘要
+    total_chars = _calculate_message_chars(state)
+    if total_chars > CHARACTER_MAX:
+        return "summarizer"
+
+    return "__end__"
+
+
+def route_post_web_search(
+    state: OpenCanvasState,
+) -> Literal["generateArtifact", "rewriteArtifact"]:
+    """
+    Web 搜索后路由
+
+    - 如果已有工件，重写
+    - 否则生成新工件
+    """
+    artifact = state.get("artifact")
+    has_artifact = artifact and len(artifact.get("contents", [])) > 1
+    return "rewriteArtifact" if has_artifact else "generateArtifact"
+
+
+# ============================================
+# 辅助节点 (子图占位)
+# ============================================
+
+
+async def web_search(
+    state: OpenCanvasState,
+    config: RunnableConfig,
+    *,
+    store: BaseStore,
+) -> OpenCanvasGraphReturnType:
+    """Web 搜索 - 使用子图"""
+    # TODO: 集成 web_search 子图
     return {
-        "messages": [
-            AIMessage(
-                content="Hello! I'm the Open Canvas assistant. How can I help you today?",
-                id="placeholder-response",
-            )
-        ]
+        "webSearchResults": [],
     }
 
 
-def clean_state(state: OpenCanvasState) -> dict:
+async def summarizer(
+    state: OpenCanvasState,
+    config: RunnableConfig,
+    *,
+    store: BaseStore,
+) -> OpenCanvasGraphReturnType:
+    """摘要节点 - 使用子图"""
+    # TODO: 集成 summarizer 子图
+    return {}
+
+
+def clean_state(state: OpenCanvasState) -> OpenCanvasGraphReturnType:
     """
     清理状态节点 (同步)
 
     重置临时状态字段到默认值。
     """
-    from ..utils import DEFAULT_INPUTS
-
     return DEFAULT_INPUTS.copy()
 
 
@@ -75,16 +169,86 @@ def build_graph() -> StateGraph:
     """构建 Open Canvas 主图"""
     builder = StateGraph(OpenCanvasState)
 
-    # 添加节点
+    # ===== 添加节点 =====
+
+    # 路由节点
     builder.add_node("generatePath", generate_path)
+
+    # 第一批: 已实现的真实节点
     builder.add_node("replyToGeneralInput", reply_to_general_input)
+    builder.add_node("generateFollowup", generate_followup)
+    builder.add_node("reflect", reflect_node)
+    builder.add_node("generateTitle", generate_title_node)
+
+    # 工件操作节点 (占位)
+    builder.add_node("generateArtifact", generate_artifact)
+    builder.add_node("rewriteArtifact", rewrite_artifact)
+    builder.add_node("updateArtifact", update_artifact)
+    builder.add_node("updateHighlightedText", update_highlighted_text)
+    builder.add_node("rewriteArtifactTheme", rewrite_artifact_theme)
+    builder.add_node("rewriteCodeArtifactTheme", rewrite_code_artifact_theme)
+    builder.add_node("customAction", custom_action)
+
+    # 辅助节点
+    builder.add_node("webSearch", web_search)
+    builder.add_node("summarizer", summarizer)
     builder.add_node("cleanState", clean_state)
 
-    # 添加边
+    # ===== 添加边 =====
+
+    # 入口
     builder.add_edge(START, "generatePath")
-    builder.add_edge("generatePath", "replyToGeneralInput")
+
+    # generatePath 路由到各处理节点
+    builder.add_conditional_edges(
+        "generatePath",
+        route_after_generate_path,
+        [
+            "updateArtifact",
+            "rewriteArtifactTheme",
+            "rewriteCodeArtifactTheme",
+            "replyToGeneralInput",
+            "generateArtifact",
+            "rewriteArtifact",
+            "customAction",
+            "updateHighlightedText",
+            "webSearch",
+        ],
+    )
+
+    # 工件操作后 → generateFollowup
+    builder.add_edge("generateArtifact", "generateFollowup")
+    builder.add_edge("rewriteArtifact", "generateFollowup")
+    builder.add_edge("updateArtifact", "generateFollowup")
+    builder.add_edge("updateHighlightedText", "generateFollowup")
+    builder.add_edge("rewriteArtifactTheme", "generateFollowup")
+    builder.add_edge("rewriteCodeArtifactTheme", "generateFollowup")
+    builder.add_edge("customAction", "generateFollowup")
+
+    # Web 搜索后路由
+    builder.add_conditional_edges(
+        "webSearch",
+        route_post_web_search,
+        ["generateArtifact", "rewriteArtifact"],
+    )
+
+    # 一般回复 → cleanState (不需要 followup)
     builder.add_edge("replyToGeneralInput", "cleanState")
-    builder.add_edge("cleanState", END)
+
+    # 工件跟进后 → reflect → cleanState
+    builder.add_edge("generateFollowup", "reflect")
+    builder.add_edge("reflect", "cleanState")
+
+    # cleanState 后条件路由
+    builder.add_conditional_edges(
+        "cleanState",
+        route_after_clean_state,
+        ["generateTitle", "summarizer", END],
+    )
+
+    # 终点
+    builder.add_edge("generateTitle", END)
+    builder.add_edge("summarizer", END)
 
     return builder
 

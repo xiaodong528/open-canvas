@@ -14,7 +14,7 @@
 | 1 | 项目初始化 | 8 | `/ok` 返回 `{"ok":true}` | ✅ |
 | 2 | 共享组件 | 3 | types/utils 可 import | ✅ |
 | 3 | 主图 - State & Prompts | 3 | State 字段与 TS 对齐 | ✅ |
-| 4 | 主图 - 节点函数 | 12 | 所有节点函数可调用 | ⬜ |
+| 4 | 主图 - 节点函数 | 12 | 所有节点函数可调用 | ✅ |
 | 5 | 主图 - 控制流 | 5 | 图可编译，路由正确 | ⬜ |
 | 6 | 辅助图 | 4 | 4 个子图全部可用 | ⬜ |
 | 7 | 集成测试 | 6 | 关键路径全部通过 | ⬜ |
@@ -317,11 +317,13 @@
 
 ---
 
-## Phase 4: 主图 - 节点函数
+## Phase 4: 主图 - 节点函数 ✅⚠️
 
 **目标**: 迁移所有主图节点函数
 
-**Gate 条件**: 所有节点函数可独立调用，输入输出符合契约
+**Gate 条件**: 所有节点函数可独立调用，输入输出符合契约 ✅
+
+**完成日期**: 2025-12-18
 
 ### 节点契约模板
 
@@ -332,83 +334,68 @@
 
 ### 任务清单
 
-- [ ] **4.1 generate_path.py** (路由决策)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/generate-path/`
-  - **功能**: 分析用户输入，设置 `next` 字段决定路由
-  - **输入**: `messages`, `artifact`, `highlightedCode`, `highlightedText`, 各种 flags
-  - **输出**: `{ "next": "<target_node>" }`
-  - **路由目标** (共 9 个):
-    - `updateArtifact` - 代码高亮编辑
-    - `updateHighlightedText` - Markdown 高亮编辑
-    - `rewriteArtifactTheme` - 文本主题变换
-    - `rewriteCodeArtifactTheme` - 代码主题变换
-    - `customAction` - 自定义操作
-    - `webSearch` - 网络搜索
-    - `replyToGeneralInput` - 纯对话
-    - `generateArtifact` - 新建文档
-    - `rewriteArtifact` - 重写文档
-  - ⚠️ URL 抓取需要: 超时控制、最大长度、错误降级
+- [x] **4.1 generate_path.py** (路由决策)
+- [x] **4.2 generate_artifact.py** (新建文档)
+- [x] **4.3 rewrite_artifact.py** (重写文档)
+- [x] **4.4 update_artifact.py** (代码高亮编辑)
+- [x] **4.5 update_highlighted_text.py** (Markdown 高亮编辑)
+- [x] **4.6 generate_followup.py** (跟进消息)
+- [x] **4.7 reply_to_general_input.py** (纯对话)
+- [x] **4.8 custom_action.py** (自定义操作)
+- [x] **4.9 reflect.py** (反思)
+- [x] **4.10 rewrite_artifact_theme.py** (文本主题变换)
+- [x] **4.11 rewrite_code_artifact_theme.py** (代码主题变换)
+- [x] **4.12 generate_title.py** (标题生成)
 
-- [ ] **4.2 generate_artifact.py** (新建文档)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/generate-artifact/`
-  - **输入**: `messages`, `_messages`
-  - **输出**: `{ "artifact": ArtifactV3, "messages": [...], "_messages": [...] }`
-  - **Schema**: 迁移 `ARTIFACT_TOOL_SCHEMA` → Pydantic BaseModel
-  - ⚠️ 使用 `.bind_tools()` 绑定工具
+### Codex 代码审查报告 (2025-12-18)
 
-- [ ] **4.3 rewrite_artifact.py** (重写文档)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/rewrite-artifact/`
-  - **输入**: `messages`, `_messages`, `artifact`
-  - **输出**: `{ "artifact": ArtifactV3, "messages": [...], "_messages": [...] }`
-  - ⚠️ 包含思考模型检测和文本提取逻辑
+**总体评分**: **C** (功能基本可用，但存在 TS 行为差异)
 
-- [ ] **4.4 update_artifact.py** (代码高亮编辑)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/updateArtifact.ts`
-  - **输入**: `highlightedCode`, `artifact`, `messages`
-  - **输出**: `{ "artifact": ArtifactV3, "messages": [...] }`
+#### 节点评分汇总
 
-- [ ] **4.5 update_highlighted_text.py** (Markdown 高亮编辑)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/updateHighlightedText.ts`
-  - **输入**: `highlightedText`, `artifact`, `messages`
-  - **输出**: `{ "artifact": ArtifactV3, "messages": [...] }`
+| 节点 | 评分 | 说明 |
+|------|------|------|
+| `generate_path.py` | **D** | 缺少 context-doc 管道、URL 内容包含、`_messages` 更新逻辑 |
+| `generate_artifact.py` | **C** | 核心创建功能 OK，缺少 context-document 消息 |
+| `rewrite_artifact.py` | **D+** | 主流程 OK，但 meta-update 提示词/schema 差异显著 |
+| `update_artifact.py` | **C** | 高亮更新逻辑匹配，缺少 context-document 消息 |
+| `update_highlighted_text.py` | **C** | 块替换逻辑匹配，缺少 context-document 消息 |
+| `generate_followup.py` | **B+** | 行为基本匹配 |
+| `reply_to_general_input.py` | **C** | 核心提示词组合匹配，缺少 context-document 消息 |
+| `custom_action.py` | **B+** | Store 访问 + 提示词构造匹配良好 |
+| `reflect.py` | **A** | 良好对等性 |
+| `rewrite_artifact_theme.py` | **A-** | 逻辑匹配 + 思考提取 |
+| `rewrite_code_artifact_theme.py` | **A-** | 逻辑匹配 + 思考提取 |
+| `generate_title.py` | **A** | 对等性良好 |
 
-- [ ] **4.6 generate_followup.py** (跟进消息)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/generateFollowup.ts`
-  - **输入**: `messages`, `artifact`
-  - **输出**: `{ "messages": [...] }`
-  - **配置**: `max_tokens=250`
+#### 关键问题
 
-- [ ] **4.7 reply_to_general_input.py** (纯对话)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/replyToGeneralInput.ts`
-  - **输入**: `messages`, `_messages`
-  - **输出**: `{ "messages": [...], "_messages": [...] }`
+**Critical (关键)**:
+1. **Context Document Messages 缺失**: TS 在多个节点注入 `createContextDocumentMessages(config)`，Python 版本未实现
+2. **URL Content Inclusion 缺失**: `generate_path.py` 未实现 TS 的 `includeURLContents` 功能
+3. **rewrite_artifact meta-update 差异**: 提示词 + schema 与 TS 不一致
 
-- [ ] **4.8 custom_action.py** (自定义操作)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/customAction.ts`
-  - **输入**: `customQuickActionId`, `artifact`, `messages`
-  - **输出**: `{ "artifact": ArtifactV3, "messages": [...] }`
-  - ⚠️ 需要从 Store 读取用户自定义 Prompt
+**Major (主要)**:
+1. **Tool Naming 差异**: Python 使用 Pydantic 类名，TS 使用显式工具名
+2. **Optional System Prompt 缺失**: TS 支持 `optionallyGetSystemPromptFromConfig`
+3. **Reflection 获取不一致**: 部分节点手动实现，部分使用 `get_formatted_reflections`
 
-- [ ] **4.9 reflect.py** (反思)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/reflect.ts`
-  - **功能**: 触发 reflection 子图
+**Minor (次要)**:
+- 未使用的导入
+- Run naming/tracing 缺失
+- Schema 严格性差异
 
-- [ ] **4.10 rewrite_artifact_theme.py** (文本主题变换)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/rewriteArtifactTheme.ts`
-  - **输入**: `language`, `artifactLength`, `readingLevel`, `regenerateWithEmojis`, `artifact`
-  - **输出**: `{ "artifact": ArtifactV3 }`
+#### 改进建议 (优先级排序)
 
-- [ ] **4.11 rewrite_code_artifact_theme.py** (代码主题变换)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/rewriteCodeArtifactTheme.ts`
-  - **输入**: `addComments`, `addLogs`, `portLanguage`, `fixBugs`, `artifact`
-  - **输出**: `{ "artifact": ArtifactV3 }`
-
-- [ ] **4.12 generate_title.py** (标题生成)
-  - 参考 TS: `apps/agents/src/open-canvas/nodes/generateTitle.ts`
-  - **功能**: 使用 GPT-4o-mini 生成对话标题
+1. 实现 `createContextDocumentMessages` 等效函数并注入到所有相关节点
+2. 完善 `generate_path.py` 的 URL 内容包含功能
+3. 统一 Tool 命名与 TS 保持一致
+4. 恢复 Optional System Prompt 行为
+5. 收紧 Pydantic Schema 约束
 
 **参考文件**:
 - TS 源码目录: `apps/agents/src/open-canvas/nodes/`
+- Python 目标目录: `apps/agents-py/src/open_canvas/nodes/`
 
 ---
 

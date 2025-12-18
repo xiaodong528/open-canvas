@@ -61,6 +61,13 @@ TEMPERATURE_EXCLUDED_MODELS = [
     "o3-mini",
 ]
 
+# 思考模型 - 在生成最终响应前执行 CoT 推理
+# 参考: packages/shared/src/models.ts:721 THINKING_MODELS
+THINKING_MODELS = [
+    "accounts/fireworks/models/deepseek-r1",
+    "groq/deepseek-r1-distill-llama-70b",
+]
+
 # LangChain 用户专属模型
 # 当前为空数组，保留扩展能力
 # 参考: packages/shared/src/models.ts:692 LANGCHAIN_USER_ONLY_MODELS

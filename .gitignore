@@ -47,6 +47,12 @@ credentials.json
 .langgraph_api
 .claude
 .claudedocs
+.codex
+.codexdocs
 .playwright-mcp
 .serena
 CLAUDE.md
+
+# Python
+.venv
+__pycache__

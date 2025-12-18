@@ -1,0 +1,20 @@
+{
+  "python_version": "3.12",
+  "dependencies": ["."],
+  "graphs": {
+    "agent": "src.open_canvas.graph:graph",
+    "reflection": "src.reflection.graph:graph",
+    "thread_title": "src.thread_title.graph:graph",
+    "summarizer": "src.summarizer.graph:graph",
+    "web_search": "src.web_search.graph:graph"
+  },
+  "env": "../../.env",
+  "http": {
+    "cors": {
+      "allow_origins": ["http://localhost:3000"],
+      "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      "allow_headers": ["*"],
+      "allow_credentials": true
+    }
+  }
+}

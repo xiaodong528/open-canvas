@@ -11,8 +11,8 @@
 
 | Phase | 描述 | 任务数 | Gate 条件 | 状态 |
 |-------|------|--------|-----------|------|
-| 1 | 项目初始化 | 5 | `/health` 返回 200 | ⬜ |
-| 2 | 共享组件 | 3 | types/utils 可 import | ⬜ |
+| 1 | 项目初始化 | 8 | `/ok` 返回 `{"ok":true}` | ✅ |
+| 2 | 共享组件 | 3 | types/utils 可 import | 🔄 |
 | 3 | 主图 - State & Prompts | 3 | State 字段与 TS 对齐 | ⬜ |
 | 4 | 主图 - 节点函数 | 12 | 所有节点函数可调用 | ⬜ |
 | 5 | 主图 - 控制流 | 5 | 图可编译，路由正确 | ⬜ |
@@ -28,26 +28,43 @@
 
 > ⚠️ **必读** - 以下是迁移过程中最容易出错的高风险点
 
-| 风险项 | 影响 | 相关 Phase |
-|--------|------|------------|
-| **camelCase 字段名** | 前端无法识别状态 | Phase 2, 3 |
-| **`_messages` reducer** | 上下文无限增长 | Phase 3 |
-| **`DEFAULT_INPUTS` 重置** | 状态污染下一轮 | Phase 2, 5 |
-| **路由条件边** | 路由丢失/错误 | Phase 5 |
-| **`messages` vs `_messages`** | 模型上下文错误 | Phase 3, 4 |
-| **CHARACTER_MAX 阈值** | 摘要永不触发 | Phase 5 |
+| 风险项 | 影响 | 相关 Phase | 状态 |
+|--------|------|------------|------|
+| **langgraph.json 路径格式** | 图无法加载 | Phase 1 | ✅ 已解决 |
+| **async vs sync 占位节点** | invoke() 失败 | Phase 1 | ✅ 已解决 |
+| **SearchResult 字段格式** | 前端无法解析搜索结果 | Phase 1 | ✅ 已解决 |
+| **camelCase 字段名** | 前端无法识别状态 | Phase 2, 3 | ⚠️ 需注意 |
+| **`_messages` reducer** | 上下文无限增长 | Phase 3 | ⬜ 待实现 |
+| **`DEFAULT_INPUTS` 重置** | 状态污染下一轮 | Phase 2, 5 | ⬜ 待实现 |
+| **路由条件边** | 路由丢失/错误 | Phase 5 | ⬜ 待实现 |
+| **`messages` vs `_messages`** | 模型上下文错误 | Phase 3, 4 | ⬜ 待实现 |
+| **CHARACTER_MAX 阈值** | 摘要永不触发 | Phase 5 | ⬜ 待实现 |
+
+### Phase 1 已解决的问题
+
+1. **langgraph.json 路径格式**
+   - ❌ 错误: `"./src/open_canvas/graph.py:graph"` (文件路径)
+   - ✅ 正确: `"src.open_canvas.graph:graph"` (模块路径)
+
+2. **占位节点同步/异步**
+   - ❌ 错误: `async def generate_path(...)` → invoke() 失败
+   - ✅ 正确: `def generate_path(...)` → 支持 invoke() 和 ainvoke()
+
+3. **SearchResult 类型结构**
+   - ❌ 错误: 嵌套结构 `{"page_content": ..., "metadata": {...}}`
+   - ✅ 正确: 扁平 camelCase `{"pageContent": ..., "url": ..., "title": ...}`
 
 ---
 
-## Phase 1: 项目初始化
+## Phase 1: 项目初始化 ✅
 
 **目标**: 创建 Python 项目骨架，配置依赖和 LangGraph Server
 
-**Gate 条件**: `langgraph dev` 启动成功，`/health` 返回 200
+**Gate 条件**: `langgraph dev` 启动成功，`/ok` 返回 `{"ok":true}` ✅
 
 ### 任务清单
 
-- [ ] **1.1 创建目录结构**
+- [x] **1.1 创建目录结构**
   ```bash
   mkdir -p apps/agents-py/src/{open_canvas/nodes,reflection,thread_title,summarizer,web_search/nodes}
   # 创建所有必要的 __init__.py
@@ -61,41 +78,86 @@
   touch apps/agents-py/src/web_search/nodes/__init__.py
   ```
 
-- [ ] **1.2 配置 pyproject.toml**
-  - 参考: [技术方案 §5.1](../plan/langgraph-python-migration.md#51-pyprojecttoml)
-  - 核心依赖（锁定版本）:
+- [x] **1.2 配置 pyproject.toml**
+  - 使用 `uv` 作为包管理器
+  - Python 版本: **3.12**
+  - 核心依赖（已安装最新版本）:
     ```toml
-    langgraph = "0.2.60"
-    langchain-core = "0.3.25"
-    langchain-openai = "0.3.0"
-    langchain-anthropic = "0.3.0"
-    ```
-  - 可选 Provider 依赖:
-    ```toml
-    langchain-google-genai = "2.0.8"
-    langchain-fireworks = "0.2.8"
-    langchain-ollama = "0.3.0"
+    langgraph>=0.2.60
+    langchain-core>=0.3.25
+    langchain-openai>=0.3.0
+    langchain-anthropic>=0.3.0
     ```
 
-- [ ] **1.3 配置 langgraph.json**
-  - 参考: [技术方案 §5.2](../plan/langgraph-python-migration.md#52-langgraphjson)
-  - 定义 5 个图: `agent`, `reflection`, `thread_title`, `summarizer`, `web_search`
-  - ⚠️ 如需浏览器直连，配置 CORS
+- [x] **1.3 配置 langgraph.json**
+  - ⚠️ **关键**: 使用模块路径格式，不是文件路径
+    ```json
+    {
+      "graphs": {
+        "agent": "src.open_canvas.graph:graph",
+        "reflection": "src.reflection.graph:graph",
+        "thread_title": "src.thread_title.graph:graph",
+        "summarizer": "src.summarizer.graph:graph",
+        "web_search": "src.web_search.graph:graph"
+      },
+      "env": "../.env"
+    }
+    ```
 
-- [ ] **1.4 创建 .env 模板**
-  - 必需: `OPENAI_API_KEY`, `LANGCHAIN_API_KEY`
-  - 可选: `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `EXA_API_KEY`
+- [x] **1.4 创建共享类型 (types.py)**
+  - ⚠️ **关键**: `SearchResult` 必须使用扁平 camelCase 结构
+    ```python
+    class SearchResult(TypedDict):
+        id: str
+        url: str
+        title: str
+        author: str
+        publishedDate: str
+        pageContent: str  # 不是 page_content
+    ```
 
-- [ ] **1.5 验证启动**
+- [x] **1.5 创建工具函数 (utils.py)**
+  - 包含 `get_model_from_config` 函数（LLM 工厂函数）
+  - 包含 `create_ai_message_from_web_results` 函数
+  - ⚠️ **关键**: 字段访问必须使用 camelCase
+
+- [x] **1.6 创建占位图实现**
+  - ⚠️ **关键**: 占位节点必须是同步 `def`，不是 `async def`
+    ```python
+    # ✅ 正确 - 同步占位节点
+    def generate_path(state: OpenCanvasState) -> dict:
+        return {"next": "replyToGeneralInput"}
+
+    # ❌ 错误 - 异步占位节点会导致 invoke() 失败
+    async def generate_path(state: OpenCanvasState) -> dict:
+        return {"next": "replyToGeneralInput"}
+    ```
+
+- [x] **1.7 添加 .gitignore**
+  - 包含: `.venv/`, `.langgraph_api/`, `__pycache__/`, `.env`
+
+- [x] **1.8 验证启动**
   ```bash
   cd apps/agents-py
-  pip install -e ".[dev]"
+  uv venv --python 3.12
+  source .venv/bin/activate
+  uv sync
   langgraph dev --port 54367
-  curl http://localhost:54367/health  # 应返回 200
+  curl http://localhost:54367/ok  # 返回 {"ok":true}
   ```
 
+### Phase 1 实施总结
+
+| 问题 | 解决方案 |
+|------|----------|
+| Python 3.14 不兼容 | 使用 Python 3.12 |
+| langgraph.json 路径格式 | 使用模块路径 `src.module:var` |
+| SearchResult snake_case | 改为扁平 camelCase 结构 |
+| 缺少 get_model_from_config | 添加 LLM 工厂函数 |
+| async 占位节点 | 改为同步 def 支持 invoke() |
+
 **参考文件**:
-- 技术方案: `docs/plan/langgraph-python-migration.md` §5
+- 技术方案: `docs/spec/langgraph-python-migration.md` §5
 
 ---
 

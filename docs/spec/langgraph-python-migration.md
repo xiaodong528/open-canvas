@@ -1,7 +1,7 @@
 # LangGraph TypeScript → Python SDK 重构方案
 
 > **创建日期**: 2025-12-16
-> **状态**: 待实施
+> **状态**: 进行中 (Phase 1 已完成)
 > **优先级**: 紧急
 
 ## 目录
@@ -611,7 +611,7 @@ async def generate_followup(
 name = "open-canvas-agents"
 version = "0.1.0"
 description = "Open Canvas LangGraph Agents (Python)"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     # LangGraph 核心 - Pin 版本以确保稳定性
     "langgraph==1.0.5",
@@ -650,11 +650,11 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 
 [tool.black]
 line-length = 100
-target-version = ["py311"]
+target-version = ["py312"]
 ```
 
 ### 5.2 langgraph.json
@@ -663,16 +663,16 @@ target-version = ["py311"]
 
 ```json
 {
-  "python_version": "3.11",
+  "python_version": "3.12",
   "dependencies": ["."],
   "graphs": {
-    "agent": "./src/open_canvas/graph.py:graph",
-    "reflection": "./src/reflection/graph.py:graph",
-    "thread_title": "./src/thread_title/graph.py:graph",
-    "summarizer": "./src/summarizer/graph.py:graph",
-    "web_search": "./src/web_search/graph.py:graph"
+    "agent": "src.open_canvas.graph:graph",
+    "reflection": "src.reflection.graph:graph",
+    "thread_title": "src.thread_title.graph:graph",
+    "summarizer": "src.summarizer.graph:graph",
+    "web_search": "src.web_search.graph:graph"
   },
-  "env": ".env",
+  "env": "../.env",
   "http": {
     "cors": {
       "allow_origins": ["http://localhost:3000", "https://your-domain.com"],
@@ -683,6 +683,10 @@ target-version = ["py311"]
   }
 }
 ```
+
+> **注意**:
+> - graphs 使用模块路径格式 `module.path:variable`，不是文件路径 `./path/to/file.py:variable`
+> - env 指向根目录的 `.env` 文件 (`../env`)，而不是 `apps/agents-py/.env`
 
 > **CORS 说明**:
 > - `allow_origins`: 允许的前端域名列表
@@ -881,13 +885,16 @@ EXA_API_KEY=xxx
 
 ### 7.2 详细任务分解
 
-#### Phase 1: 项目初始化
+#### Phase 1: 项目初始化 ✅
 
-- [ ] 创建 `apps/agents-py/` 目录结构
-- [ ] 配置 `pyproject.toml`
-- [ ] 配置 `langgraph.json`
-- [ ] 创建共享类型 (`src/types.py`)
-- [ ] 创建工具函数 (`src/utils.py`)
+- [x] 创建 `apps/agents-py/` 目录结构
+- [x] 配置 `pyproject.toml` (Python 3.12, uv 包管理)
+- [x] 配置 `langgraph.json` (模块路径格式)
+- [x] 创建共享类型 (`src/types.py`) - camelCase 字段
+- [x] 创建工具函数 (`src/utils.py`) - 包含 `get_model_from_config`
+- [x] 创建 5 个图的占位实现 (同步 `def` 节点)
+- [x] 添加 `.gitignore` 配置
+- [x] 验证服务器启动成功 (`langgraph dev --port 54367`)
 
 #### Phase 2: open-canvas 主图迁移
 

@@ -64,7 +64,9 @@ async def update_artifact(
         包含更新后 artifact 的状态更新
     """
     # 获取模型配置
-    model_provider, model_name = get_model_config(config)
+    model_cfg = get_model_config(config)
+    model_provider = model_cfg.get("modelProvider", "")
+    model_name = model_cfg.get("modelName", "")
 
     # 选择模型 - 智能模型使用用户配置，否则使用 gpt-4o
     if "openai" in model_provider or "3-5-sonnet" in model_name:

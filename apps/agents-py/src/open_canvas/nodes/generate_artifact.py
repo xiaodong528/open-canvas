@@ -112,7 +112,8 @@ async def generate_artifact(
         包含新 artifact 的状态更新
     """
     # 获取模型配置
-    _, model_name = get_model_config(config, is_tool_calling=True)
+    model_cfg = get_model_config(config, is_tool_calling=True)
+    model_name = model_cfg.get("modelName", "")
 
     # 获取模型 (使用工具调用模式)
     small_model = get_model_from_config(
@@ -126,7 +127,7 @@ async def generate_artifact(
     )
 
     # 获取反思/记忆
-    memories_as_string = await get_formatted_reflections(config, store)
+    memories_as_string = await get_formatted_reflections(config)
 
     # 格式化提示词
     formatted_prompt = _format_new_artifact_prompt(memories_as_string, model_name)

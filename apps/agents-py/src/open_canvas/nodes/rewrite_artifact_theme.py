@@ -91,7 +91,8 @@ async def rewrite_artifact_theme(
         包含更新后 artifact 的状态更新，可能包含思考消息
     """
     # 获取模型
-    _, model_name = get_model_config(config)
+    model_cfg = get_model_config(config)
+    model_name = model_cfg.get("modelName", "")
     small_model = get_model_from_config(config)
 
     # 获取 assistant_id

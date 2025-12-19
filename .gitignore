@@ -45,8 +45,10 @@ credentials.json
 
 # LangGraph API
 .langgraph_api
+.agentdocs
 .claude
 .claudedocs
+.codebase
 .codex
 .codexdocs
 .playwright-mcp

@@ -15,7 +15,7 @@
 | 2 | 共享组件 | 3 | types/utils 可 import | ✅ |
 | 3 | 主图 - State & Prompts | 3 | State 字段与 TS 对齐 | ✅ |
 | 4 | 主图 - 节点函数 | 12 | 所有节点函数可调用 | ✅ |
-| 5 | 主图 - 控制流 | 5 | 图可编译，路由正确 | ⬜ |
+| 5 | 主图 - 控制流 | 5 | 图可编译，路由正确 | ✅ |
 | 6 | 辅助图 | 4 | 4 个子图全部可用 | ⬜ |
 | 7 | 集成测试 | 6 | 关键路径全部通过 | ⬜ |
 | 8 | 部署 | 3 | 生产环境可访问 | ⬜ |
@@ -35,10 +35,10 @@
 | **SearchResult 字段格式** | 前端无法解析搜索结果 | Phase 1 | ✅ 已解决 |
 | **camelCase 字段名** | 前端无法识别状态 | Phase 2, 3 | ⚠️ 需注意 |
 | **`_messages` reducer** | 上下文无限增长 | Phase 3 | ✅ 已实现 |
-| **`DEFAULT_INPUTS` 重置** | 状态污染下一轮 | Phase 2, 5 | ⬜ 待实现 |
-| **路由条件边** | 路由丢失/错误 | Phase 5 | ⬜ 待实现 |
-| **`messages` vs `_messages`** | 模型上下文错误 | Phase 3, 4 | 🔄 Phase 3 完成 |
-| **CHARACTER_MAX 阈值** | 摘要永不触发 | Phase 5 | ⬜ 待实现 |
+| **`DEFAULT_INPUTS` 重置** | 状态污染下一轮 | Phase 2, 5 | ✅ 已实现 |
+| **路由条件边** | 路由丢失/错误 | Phase 5 | ✅ 已实现 |
+| **`messages` vs `_messages`** | 模型上下文错误 | Phase 3, 4 | ✅ 已完成 |
+| **CHARACTER_MAX 阈值** | 摘要永不触发 | Phase 5 | ✅ 已实现 |
 
 ### Phase 1 已解决的问题
 
@@ -399,15 +399,17 @@
 
 ---
 
-## Phase 5: 主图 - 控制流与组装
+## Phase 5: 主图 - 控制流与组装 ✅
 
 **目标**: 实现主图控制流函数并组装完整的 StateGraph
 
-**Gate 条件**: 图可编译，`generatePath` 能正确路由到 9 个目标节点
+**Gate 条件**: 图可编译，`generatePath` 能正确路由到 9 个目标节点 ✅
+
+**完成日期**: 2025-12-19
 
 ### 任务清单
 
-- [ ] **5.1 实现 route_node 函数**
+- [x] **5.1 实现 route_node 函数**
   - 参考 TS: `apps/agents/src/open-canvas/index.ts` 第 20-28 行
   ```python
   def route_node(state: OpenCanvasState) -> Send:
@@ -416,7 +418,7 @@
       return Send(state["next"], dict(state))
   ```
 
-- [ ] **5.2 实现 clean_state 函数**
+- [x] **5.2 实现 clean_state 函数**
   - 参考 TS: `apps/agents/src/open-canvas/index.ts` 第 30-34 行
   - ⚠️ **关键**: 必须使用 `DEFAULT_INPUTS` 重置状态，防止污染下一轮
   ```python
@@ -424,7 +426,7 @@
       return DEFAULT_INPUTS.copy()
   ```
 
-- [ ] **5.3 实现 conditionally_generate_title 函数**
+- [x] **5.3 实现 conditionally_generate_title 函数**
   - 参考 TS: `apps/agents/src/open-canvas/index.ts` 第 64-72 行
   - **逻辑**:
     - 如果 `messages` 长度 > 2 → 调用 `simple_token_calculator`
@@ -449,7 +451,7 @@
       return "summarizer" if total_chars > CHARACTER_MAX else END
   ```
 
-- [ ] **5.4 实现 route_post_web_search 函数**
+- [x] **5.4 实现 route_post_web_search 节点**
   - 参考 TS: `apps/agents/src/open-canvas/index.ts` 第 78-106 行
   - **逻辑**:
     - 如果无搜索结果 → `Send` 到 `generateArtifact/rewriteArtifact`
@@ -473,7 +475,7 @@
       )
   ```
 
-- [ ] **5.5 组装 StateGraph**
+- [x] **5.5 组装 StateGraph**
   - 参考 TS: `apps/agents/src/open-canvas/index.ts` 第 108-162 行
 
   **节点清单** (共 15 个):
@@ -534,6 +536,128 @@
 
 **参考文件**:
 - TS 源码: `apps/agents/src/open-canvas/index.ts`
+
+### Phase 5 实施总结 (2025-12-19)
+
+**Gate 条件验证结果**:
+- ✅ **图编译成功**: 17 个节点 (含 `__start__`)
+- ✅ **`route_node` 正确路由**: 9 个目标节点全部通过 Send 动态路由测试
+- ✅ **`conditionally_generate_title` 分支正确**: 3 个分支 (generateTitle/summarizer/END)
+- ✅ **`simple_token_calculator` 阈值正确**: CHARACTER_MAX=300000 触发 summarizer
+- ✅ **`route_post_web_search` 双模式**: Send (无结果) / Command (有结果)
+
+**关键技术决策**:
+
+| 决策点 | TS 实现 | Python 实现 | 说明 |
+|--------|---------|-------------|------|
+| `routeNode` 路由 | `new Send(node, state)` | `Send(node, dict(state))` | 动态路由 + 状态传递 |
+| `routePostWebSearch` | 节点返回 `Send \| Command` | 节点返回 `Union[Send, Command]` | 搜索后处理 |
+| 条件边映射 | `[...]` 列表 | `[...]` 列表 | 显式声明目标节点 |
+
+**与 TS 的差异**:
+- **类型注解**: Python 使用 `Union[Send, Command]` 而非 TS 的 `Send | Command`
+- **状态传递**: `dict(state)` 确保状态深拷贝
+- **空值检查**: Python 需要显式检查 `None` 和空列表
+
+**验证命令**:
+```bash
+cd apps/agents-py
+source .venv/bin/activate
+python -c "from src.open_canvas.graph import graph; print(f'Nodes: {len(graph.nodes)}')"
+```
+
+### Codex 代码审查报告 (2025-12-19)
+
+**审查文件**: `docs/review/phase5-control-flow-review.md`
+
+**审查结论**: Phase 5 控制流整体迁移正确，核心路由与边配置与 TS 对齐。
+
+#### 发现的问题
+
+| # | 问题 | 严重性 | 状态 |
+|---|------|--------|------|
+| 1 | `simple_token_calculator` 内容解析覆盖不完整 | 🔴 高 | ✅ 已修复 |
+| 2 | 返回 `"__end__"` 字符串而非 `END` 常量 | 🟡 中 | ✅ 已修复 |
+| 3 | `webSearch` 节点是占位实现 | ⏳ 延迟 | ✅ 已标注 |
+| 4 | 缺少 `runName` 编译配置 | 🟢 低 | ❌ 不适用 |
+
+#### 问题详情
+
+**1. 内容解析覆盖不完整**
+- **TS**: `msg.content.flatMap(c => "text" in c ? c.text : [])`
+- **Python 原实现**: 仅处理 `isinstance(content, list)` + dict 元素
+- **修复**: 新增 `hasattr(c, "text")` 分支支持对象属性访问
+
+**2. END 常量使用**
+- **TS**: `return END`
+- **Python 原实现**: `return "__end__"`
+- **修复**: 改为 `return END`
+
+**3. webSearch 占位实现**
+- **问题**: 当前始终返回空结果，实际 web 搜索功能待 Phase 6 实现
+- **处理**: 在 docstring 中明确标注占位行为
+
+**4. runName 配置 (不适用)**
+- **TS**: `graph.compile().withConfig({ runName: "open_canvas" })`
+- **结论**: Python SDK 不支持编译时 `run_name` 配置，需在运行时通过 `config` 参数传递
+
+### 改进实施记录 (2025-12-19)
+
+**修改文件**: `apps/agents-py/src/open_canvas/graph.py`
+
+#### 改进 1: `_calculate_message_chars` 内容解析增强
+
+```python
+# 改进前
+elif isinstance(content, list):
+    for c in content:
+        if isinstance(c, dict) and "text" in c:
+            total_chars += len(c.get("text", ""))
+
+# 改进后
+else:
+    if isinstance(content, list):
+        for c in content:
+            if isinstance(c, dict) and "text" in c:
+                total_chars += len(c.get("text", ""))
+            elif hasattr(c, "text"):
+                total_chars += len(getattr(c, "text", ""))
+```
+
+#### 改进 2: 使用 `END` 常量
+
+```python
+# 改进前
+return "__end__"
+
+# 改进后
+return END
+```
+
+#### 改进 3: 标注 `web_search` 占位实现
+
+```python
+async def web_search(...) -> OpenCanvasGraphReturnType:
+    """Web 搜索节点 - Phase 6 实现
+
+    NOTE: 当前为占位实现，始终返回空结果。
+    真正的 web_search 子图将在 Phase 6 实现，届时此函数将被替换为子图调用。
+
+    参考 TS: apps/agents/src/open-canvas/index.ts 使用 webSearchGraph 子图
+    """
+    # TODO(Phase 6): 替换为 web_search 子图调用
+    return {"webSearchResults": []}
+```
+
+#### 验证结果
+
+```
+✅ Nodes: 17
+✅ Is END constant: True
+✅ String content chars: 11
+✅ Dict list content chars: 5
+✅ Object content chars: 5 (新增支持)
+```
 
 ---
 

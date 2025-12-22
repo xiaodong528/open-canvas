@@ -24,8 +24,8 @@ class WebSearchState(TypedDict, total=False):
     # 是否需要搜索
     shouldSearch: Optional[bool]
 
-    # 搜索查询
-    searchQueries: Optional[list[str]]
+    # 搜索查询 (单个查询字符串)
+    query: Optional[str]
 
     # 搜索结果
     webSearchResults: Optional[list[SearchResult]]

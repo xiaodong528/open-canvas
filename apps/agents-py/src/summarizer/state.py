@@ -2,7 +2,7 @@
 摘要图状态定义
 """
 
-from typing import Annotated
+from typing import Annotated, Optional
 
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
@@ -21,3 +21,6 @@ class SummarizerState(TypedDict, total=False):
 
     # 内部消息列表
     _messages: Annotated[list[AnyMessage], add_messages]
+
+    # 线程 ID (用于更新线程状态)
+    threadId: Optional[str]

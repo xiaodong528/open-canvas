@@ -16,7 +16,7 @@
 | 3 | 主图 - State & Prompts | 3 | State 字段与 TS 对齐 | ✅ |
 | 4 | 主图 - 节点函数 | 12 | 所有节点函数可调用 | ✅ |
 | 5 | 主图 - 控制流 | 5 | 图可编译，路由正确 | ✅ |
-| 6 | 辅助图 | 4 | 4 个子图全部可用 | ⬜ |
+| 6 | 辅助图 | 4 | 4 个子图全部可用 | ✅ |
 | 7 | 集成测试 | 6 | 关键路径全部通过 | ⬜ |
 | 8 | 部署 | 3 | 生产环境可访问 | ⬜ |
 
@@ -661,37 +661,143 @@ async def web_search(...) -> OpenCanvasGraphReturnType:
 
 ---
 
-## Phase 6: 辅助图
+## Phase 6: 辅助图 ✅
 
 **目标**: 迁移 4 个辅助图
 
-**Gate 条件**: 4 个子图全部可独立编译和调用
+**Gate 条件**: 4 个子图全部可独立编译和调用 ✅
+
+**完成日期**: 2025-12-22
 
 ### 任务清单
 
-- [ ] **6.1 reflection 图**
+- [x] **6.1 reflection 图**
   - 参考 TS: `apps/agents/src/reflection/`
   - 功能: 生成风格规则和用户事实，存储到 LangGraph Store
-  - ⚠️ 使用 `config["store"]` 进行 async put 操作
+  - ⚠️ 使用 `store.aget()` / `store.aput()` 进行 async 操作
+  - **文件**:
+    - `src/reflection/prompts.py` - REFLECT_SYSTEM_PROMPT, REFLECT_USER_PROMPT
+    - `src/reflection/graph.py` - 完整 Store 操作实现
 
-- [ ] **6.2 thread-title 图**
+- [x] **6.2 thread_title 图**
   - 参考 TS: `apps/agents/src/thread-title/`
   - 功能: 使用 GPT-4o-mini 生成对话标题
-  - ⚠️ 使用 LangGraph SDK Client 更新线程元数据
+  - ⚠️ 使用 LangGraph SDK Client `get_client(url=...)` 更新线程元数据
+  - **文件**:
+    - `src/thread_title/prompts.py` - TITLE_SYSTEM_PROMPT, TITLE_USER_PROMPT
+    - `src/thread_title/graph.py` - SDK Client 实现
 
-- [ ] **6.3 summarizer 图**
+- [x] **6.3 summarizer 图**
   - 参考 TS: `apps/agents/src/summarizer/`
   - 功能: 压缩长对话
-  - ⚠️ 标记摘要消息以触发 reducer 清空历史
+  - ⚠️ 标记摘要消息以触发 reducer 清空历史 (`OC_SUMMARIZED_MESSAGE_KEY`)
+  - **文件**:
+    - `src/summarizer/state.py` - 添加 `threadId` 字段
+    - `src/summarizer/graph.py` - SDK Client thread state update
 
-- [ ] **6.4 web-search 图**
+- [x] **6.4 web_search 图**
   - 参考 TS: `apps/agents/src/web-search/`
-  - 功能: 3 节点图 (classify → query_generator → search)
-  - ⚠️ 使用 Exa API，需要 `EXA_API_KEY`
-  - ⚠️ 超时控制、空结果降级
+  - 功能: 3 节点图 (classifyMessage → queryGenerator → search)
+  - ⚠️ 使用 `exa-py` API，需要 `EXA_API_KEY`
+  - **文件**:
+    - `src/web_search/state.py` - 改 `searchQueries` 为 `query`
+    - `src/web_search/nodes/classify_message.py` - 消息分类节点
+    - `src/web_search/nodes/query_generator.py` - 查询生成节点
+    - `src/web_search/nodes/search.py` - Exa 搜索执行节点
+    - `src/web_search/graph.py` - 3 节点图组装
 
 **参考文件**:
 - TS 源码目录: `apps/agents/src/{reflection,thread-title,summarizer,web-search}/`
+
+### Phase 6 技术模式对照
+
+| 模式 | TypeScript | Python |
+|------|-----------|--------|
+| Store 读取 | `await store.get()` | `await store.aget()` |
+| Store 写入 | `await store.put()` | `await store.aput()` |
+| SDK Client | `new Client({apiUrl})` | `get_client(url=...)` |
+| Tool 绑定 | `.bindTools([tool], {tool_choice})` | `.bind_tools([Tool], tool_choice=...)` |
+| 结构化输出 | `.withStructuredOutput(schema)` | `.with_structured_output(Schema)` |
+| 日期格式化 | `format(new Date(), "PPpp")` | `datetime.now().strftime('%b %d, %Y, %I:%M %p')` |
+
+### Phase 6 验证结果
+
+```
+=== Phase 6 辅助图验证 ===
+
+1. reflection 图: 2 nodes (reflect)
+2. thread_title 图: 2 nodes (generateTitle)
+3. summarizer 图: 2 nodes (summarize)
+4. web_search 图: 4 nodes (classifyMessage, queryGenerator, search)
+
+=== 所有 4 个辅助图验证通过 ===
+=== 所有 5 个图通过 langgraph dev 加载验证 ===
+```
+
+**验证命令**:
+```bash
+cd apps/agents-py
+source .venv/bin/activate
+langgraph dev --port 54367
+# 检查 5 个图全部加载成功
+```
+
+### Codex 代码审查报告 (2025-12-22)
+
+**审查工具**: Codex CLI + Context7 MCP
+
+#### 审查评分汇总
+
+| 图 | 评分 | 说明 |
+|----|------|------|
+| reflection | **A** | 完全一致，Store 注入遵循最佳实践 |
+| thread_title | **A-** | 高度一致，SDK Client 调用正确 |
+| summarizer | **A** | 完全一致，常量正确导入 |
+| web_search | **B+** | 核心逻辑一致，Exa 结果转换需验证 |
+
+#### 关键发现
+
+**高优先级**:
+- **WebSearch `SearchResult` 类型转换差异**
+  - TS: `ExaRetriever` 自动返回 `DocumentInterface`
+  - Python: 手动构造 `SearchResult` 对象
+  - 需验证字段映射一致性 (已修复 `publishedDate` 字段访问)
+
+**已确认的良好实践**:
+- ✅ Store 注入通过 `store: BaseStore` 参数
+- ✅ 常量从 `constants.py` 导入
+- ✅ Prompt 模板完全一致
+- ✅ Pydantic Schema 与 TS Zod 对齐
+
+#### 改进实施记录
+
+**修复 1**: `web_search/nodes/search.py` ExaMetadata 字段映射
+
+```python
+# 改进前 - 字段访问错误
+"publishedDate": result.published_date  # snake_case
+
+# 改进后 - 正确的 camelCase 字段访问
+"publishedDate": result.publishedDate
+"image": getattr(result, "image", None)
+"favicon": getattr(result, "favicon", None)
+```
+
+**修复 2**: 添加缺失的 ExaMetadata 字段
+
+```python
+# 添加 id, image, favicon 字段匹配 TS ExaMetadata
+SearchResult(
+    id=result.id,
+    url=result.url,
+    title=result.title,
+    author=result.author or "",
+    publishedDate=result.publishedDate or "",
+    pageContent=result.text or "",
+    image=getattr(result, "image", None),
+    favicon=getattr(result, "favicon", None),
+)
+```
 
 ---
 

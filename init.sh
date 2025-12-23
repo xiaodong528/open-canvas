@@ -69,23 +69,20 @@ cleanup() {
     exit 0
 }
 
-# 检查端口是否被占用
+# 检查端口是否被占用 - 自动清理
 check_port() {
     local port=$1
     local name=$2
 
     if lsof -ti:$port > /dev/null 2>&1; then
-        log_warn "端口 $port ($name) 已被占用"
-        read -p "是否终止占用进程? (y/n): " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            lsof -ti:$port | xargs kill -9 2>/dev/null || true
-            sleep 1
-            log_success "端口 $port 已释放"
-        else
-            log_error "请手动释放端口 $port 后重试"
+        log_warn "端口 $port ($name) 已被占用，正在自动清理..."
+        lsof -ti:$port | xargs kill -9 2>/dev/null || true
+        sleep 1
+        if lsof -ti:$port > /dev/null 2>&1; then
+            log_error "无法释放端口 $port，请手动检查"
             exit 1
         fi
+        log_success "端口 $port 已释放"
     fi
 }
 
@@ -228,7 +225,7 @@ main() {
     TAIL_PID=$!
 
     # 等待子进程
-    wait $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+    wait $BACKEND_PID $SHARED_WATCH_PID $FRONTEND_PID 2>/dev/null || true
 }
 
 # 运行主函数

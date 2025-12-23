@@ -57,7 +57,7 @@ def check_dev_server(timeout_seconds: int = 15) -> None:
     target_cwd = script_dir.parent
 
     process = subprocess.Popen(
-        "langgraph dev --port 54367",
+        "uv run langgraph dev --port 54367",
         cwd=str(target_cwd),
         shell=True,
         stdout=subprocess.PIPE,

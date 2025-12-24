@@ -588,6 +588,66 @@ const GEMINI_MODELS: ModelConfigurationParams[] = [
     isNew: true,
   },
   {
+    name: "gemini-3-flash-preview",
+    label: "Gemini 3 Flash (Preview)",
+    config: {
+      provider: "google-genai",
+      temperatureRange: {
+        min: 0,
+        max: 1,
+        default: 0.5,
+        current: 0.5,
+      },
+      maxTokens: {
+        min: 1,
+        max: 65_536,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: true,
+  },
+  {
+    name: "gemini-2.5-flash",
+    label: "Gemini 2.5 Flash",
+    config: {
+      provider: "google-genai",
+      temperatureRange: {
+        min: 0,
+        max: 2,
+        default: 1,
+        current: 1,
+      },
+      maxTokens: {
+        min: 1,
+        max: 65_536,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: true,
+  },
+  {
+    name: "gemini-2.5-pro",
+    label: "Gemini 2.5 Pro",
+    config: {
+      provider: "google-genai",
+      temperatureRange: {
+        min: 0,
+        max: 2,
+        default: 1,
+        current: 1,
+      },
+      maxTokens: {
+        min: 1,
+        max: 65_536,
+        default: 4_096,
+        current: 4_096,
+      },
+    },
+    isNew: true,
+  },
+  {
     name: "gemini-2.5-flash-preview-05-20",
     label: "Gemini 2.5 Flash (Preview)",
     config: {
@@ -710,6 +770,9 @@ export const NON_STREAMING_TOOL_CALLING_MODELS = [
   "gemini-2.5-pro-preview-05-06",
   "gemini-2.5-flash-preview-05-20",
   "gemini-3-pro-preview",
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+  "gemini-2.5-pro",
 ];
 
 // Models which do NOT stream back text.

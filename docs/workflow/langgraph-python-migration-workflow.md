@@ -42,6 +42,10 @@
 | **webSearch/summarizer 占位** | 主流程能力缺失 | Phase 6.5 | ✅ 已修复 |
 | **currentIndex 字段错误** | 版本读取错误 | Phase 6.5 | ✅ 已修复 |
 | **Store namespace 类型** | 潜在运行时错误 | Phase 6.5 | ✅ 已修复 |
+| **rewriteArtifact 流式契约** | 前端无法更新工件 | Phase 6.6 | ✅ 已修复 |
+| **TEMPERATURE_EXCLUDED_MODELS** | GPT-5 模型 API 错误 | Phase 6.6 | ✅ 已修复 |
+| **动态路由上下文文档** | 路由决策不准确 | Phase 6.6 | ✅ 已修复 |
+| **路由验证缺失** | 路由失败无错误信息 | Phase 6.6 | ✅ 已修复 |
 
 ### Phase 1 已解决的问题
 
@@ -844,6 +848,85 @@ SearchResult(
 3. thread_title: 2 nodes
 4. summarizer: 2 nodes
 5. web_search: 4 nodes
+```
+
+### Phase 6.6: 审查报告修复 (2025-12-24)
+
+基于 Codex 审查报告 (`docs/workflow/review/.../open-canvas-ts-to-py-migration-review.md`)，完成剩余修复：
+
+#### 修复清单
+
+| 问题 | 严重性 | 修复内容 | 文件 |
+|------|--------|----------|------|
+| **rewriteArtifact 流式契约** | Critical | 添加 `run_name` 配置到模型调用 | `rewrite_artifact.py:130,314` |
+| **TEMPERATURE_EXCLUDED_MODELS** | Critical | 同步 gpt-5*/o4-mini 到 Python | `constants.py:57-66` |
+| **动态路由上下文文档** | Warning | 注入 `context_document_messages` | `generate_path.py:510-517` |
+| **路由验证缺失** | Warning | 添加 `if not route: raise ValueError(...)` | `generate_path.py:655-658` |
+
+#### 修改详情
+
+**1. rewrite_artifact.py 流式契约修复**
+
+```python
+# _optionally_update_artifact_meta (line 130)
+response = await model_with_tool.ainvoke(
+    [...],
+    config={"run_name": "optionally_update_artifact_meta"},
+)
+
+# rewrite_artifact (line 314)
+new_artifact_response = await small_model.ainvoke(
+    messages,
+    config={"run_name": "rewrite_artifact_model_call"},
+)
+```
+
+**2. constants.py TEMPERATURE_EXCLUDED_MODELS 同步**
+
+```python
+TEMPERATURE_EXCLUDED_MODELS = [
+    "o3-mini",
+    "o4-mini",
+    "gpt-5.2",
+    "gpt-5.1",
+    "gpt-5",
+    "gpt-5-mini",
+    "gpt-5-nano",
+]
+```
+
+**3. generate_path.py 上下文文档注入**
+
+```python
+# 获取上下文文档消息 - 与 TS 版本保持一致
+context_document_messages = await create_context_document_messages(config)
+
+# 调用模型 - 注入上下文文档以提供完整信息给路由决策
+result = await model_with_tool.ainvoke([
+    *context_document_messages,
+    HumanMessage(content=formatted_prompt),
+])
+```
+
+**4. generate_path.py 路由验证**
+
+```python
+# 验证路由结果 - 与 TS 版本保持一致
+if not route:
+    raise ValueError("Route not found from dynamic path determination")
+```
+
+#### 验证结果
+
+```
+=== All 5 graphs loaded successfully ===
+1. agent: 17 nodes
+2. reflection: 2 nodes
+3. thread_title: 2 nodes
+4. summarizer: 2 nodes
+5. web_search: 4 nodes
+
+=== 62 passed, 6 skipped ===
 ```
 
 ---

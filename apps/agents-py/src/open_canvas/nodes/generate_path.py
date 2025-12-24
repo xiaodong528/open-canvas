@@ -507,8 +507,13 @@ async def _dynamic_determine_path(
         tool_choice="DynamicRouteSchema",
     )
 
-    # 调用模型
+    # 获取上下文文档消息 - 与 TS 版本保持一致
+    # 参考: apps/agents/src/open-canvas/nodes/generate-path/dynamic-determine-path.ts:90
+    context_document_messages = await create_context_document_messages(config)
+
+    # 调用模型 - 注入上下文文档以提供完整信息给路由决策
     result = await model_with_tool.ainvoke([
+        *context_document_messages,
         HumanMessage(content=formatted_prompt),
     ])
 
@@ -646,6 +651,11 @@ async def generate_path(
         {**state, "_messages": new_internal_messages},
         config,
     )
+
+    # 验证路由结果 - 与 TS 版本保持一致
+    # 参考: apps/agents/src/open-canvas/nodes/generate-path/index.ts:150-152
+    if not route:
+        raise ValueError("Route not found from dynamic path determination")
 
     # 构建最终返回
     if new_messages:

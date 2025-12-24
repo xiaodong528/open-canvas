@@ -31,6 +31,10 @@ dependencies = [
     # 工具库
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
+
+    # 测试
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
 ]
 
 [project.optional-dependencies]

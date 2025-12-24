@@ -126,11 +126,14 @@ async def _optionally_update_artifact_meta(
     # 检查是否使用 O1 模型
     is_o1_model = is_using_o1_mini_model(config)
 
-    # 调用模型
-    response = await model_with_tool.ainvoke([
-        {"role": "user" if is_o1_model else "system", "content": prompt},
-        recent_human_message,
-    ])
+    # 调用模型 - 设置 run_name 以供前端识别流式事件
+    response = await model_with_tool.ainvoke(
+        [
+            {"role": "user" if is_o1_model else "system", "content": prompt},
+            recent_human_message,
+        ],
+        config={"run_name": "optionally_update_artifact_meta"},
+    )
 
     # 提取工具调用结果
     artifact_type = current_artifact_content.get("type", "text")
@@ -307,8 +310,11 @@ async def rewrite_artifact(
             recent_human_message,
         ]
 
-    # 调用模型
-    new_artifact_response = await small_model.ainvoke(messages)
+    # 调用模型 - 设置 run_name 以供前端识别流式事件
+    new_artifact_response = await small_model.ainvoke(
+        messages,
+        config={"run_name": "rewrite_artifact_model_call"},
+    )
 
     # 处理思考模型输出
     thinking_message = None

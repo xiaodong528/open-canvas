@@ -54,11 +54,15 @@ DEFAULT_INPUTS: dict[str, Any] = {
 # ============================================
 
 # 不支持温度参数的模型 (推理模型)
+# 参考: packages/shared/src/models.ts:696 TEMPERATURE_EXCLUDED_MODELS
 TEMPERATURE_EXCLUDED_MODELS = [
-    "o1-preview",
-    "o1",
-    "o1-mini",
     "o3-mini",
+    "o4-mini",
+    "gpt-5.2",
+    "gpt-5.1",
+    "gpt-5",
+    "gpt-5-mini",
+    "gpt-5-nano",
 ]
 
 # 思考模型 - 在生成最终响应前执行 CoT 推理

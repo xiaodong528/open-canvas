@@ -1551,6 +1551,8 @@ dependencies = [
     { name = "langgraph-sdk" },
     { name = "pydantic" },
     { name = "pypdf" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "python-dotenv" },
 ]
 
@@ -1576,7 +1578,9 @@ requires-dist = [
     { name = "langgraph-sdk", specifier = ">=0.3.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pypdf", specifier = ">=4.0.0" },
+    { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },

@@ -42,7 +42,7 @@ def get_artifact_content(artifact: ArtifactV3) -> ArtifactMarkdownV3 | ArtifactC
     if not contents:
         return None
 
-    current_index = artifact.get("currentContentIndex", len(contents) - 1)
+    current_index = artifact.get("currentIndex", len(contents) - 1)
     if 0 <= current_index < len(contents):
         return contents[current_index]
 

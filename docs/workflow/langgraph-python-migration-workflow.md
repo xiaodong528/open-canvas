@@ -39,6 +39,9 @@
 | **路由条件边** | 路由丢失/错误 | Phase 5 | ✅ 已实现 |
 | **`messages` vs `_messages`** | 模型上下文错误 | Phase 3, 4 | ✅ 已完成 |
 | **CHARACTER_MAX 阈值** | 摘要永不触发 | Phase 5 | ✅ 已实现 |
+| **webSearch/summarizer 占位** | 主流程能力缺失 | Phase 6.5 | ✅ 已修复 |
+| **currentIndex 字段错误** | 版本读取错误 | Phase 6.5 | ✅ 已修复 |
+| **Store namespace 类型** | 潜在运行时错误 | Phase 6.5 | ✅ 已修复 |
 
 ### Phase 1 已解决的问题
 
@@ -797,6 +800,50 @@ SearchResult(
     image=getattr(result, "image", None),
     favicon=getattr(result, "favicon", None),
 )
+```
+
+### Phase 6.5: 迁移审查修复 (2025-12-24)
+
+基于 `docs/workflow/review/.../open-canvas-ts-to-py-migration-review.md` 审查报告，完成以下修复：
+
+#### 修复清单
+
+| 问题 | 严重性 | 修复内容 |
+|------|--------|----------|
+| **C1** webSearch/summarizer 占位实现 | Critical | webSearch 挂载子图；summarizer 改用 SDK 调用 |
+| **C2** currentIndex 字段错误 | Critical | reflection/thread_title 中 `currentContentIndex` → `currentIndex` |
+| **C3** namespace list/tuple 混用 | Critical | constants.py 和 utils.py 统一使用 tuple |
+| **H1** graph.name 可观测性 | High | 添加 `graph.name = "open_canvas"` |
+
+#### 修改文件
+
+1. **`src/open_canvas/graph.py`**
+   - 添加导入: `from ..web_search.graph import graph as web_search_graph`
+   - webSearch 节点: 占位函数 → 挂载 `web_search_graph` 子图
+   - summarizer 节点: 占位函数 → SDK 异步调用 (仿 TS 实现)
+   - 添加: `graph.name = "open_canvas"`
+
+2. **`src/reflection/graph.py`** 第 51 行
+   - `currentContentIndex` → `currentIndex`
+
+3. **`src/thread_title/graph.py`** 第 45 行
+   - `currentContentIndex` → `currentIndex`
+
+4. **`src/constants.py`** 第 21 行
+   - `["context_documents"]` → `("context_documents",)`
+
+5. **`src/utils.py`** 第 138 行
+   - `["memories", assistant_id]` → `("memories", assistant_id)`
+
+#### 验证结果
+
+```
+=== All 5 graphs loaded successfully ===
+1. agent: 17 nodes, name=open_canvas
+2. reflection: 2 nodes
+3. thread_title: 2 nodes
+4. summarizer: 2 nodes
+5. web_search: 4 nodes
 ```
 
 ---

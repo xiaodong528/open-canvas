@@ -135,7 +135,7 @@ async def get_formatted_reflections(config: RunnableConfig) -> str:
     if not assistant_id:
         raise ValueError("`assistant_id` not found in configurable")
 
-    memory_namespace = ["memories", assistant_id]
+    memory_namespace = ("memories", assistant_id)
     memory_key = "reflection"
 
     memories = await store.aget(memory_namespace, memory_key)

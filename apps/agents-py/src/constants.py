@@ -18,7 +18,7 @@ OC_WEB_SEARCH_RESULTS_MESSAGE_KEY = "__oc_web_search_results_message"
 # 命名空间常量
 # ============================================
 
-CONTEXT_DOCUMENTS_NAMESPACE = ["context_documents"]
+CONTEXT_DOCUMENTS_NAMESPACE = ("context_documents",)
 
 # ============================================
 # 摘要触发阈值

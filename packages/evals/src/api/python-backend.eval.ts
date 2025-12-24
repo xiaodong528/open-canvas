@@ -59,7 +59,8 @@ ls.describe("Python Backend Graphs", () => {
       ls.logOutputs({ foundGraphs: graphIds, count: graphIds.length });
 
       // Verify all expected graphs are registered
-      for (const expected of referenceOutputs.expectedGraphs) {
+      const expectedGraphs = (referenceOutputs as { expectedGraphs: string[] })?.expectedGraphs || [];
+      for (const expected of expectedGraphs) {
         expect(graphIds).toContain(expected);
       }
     }
@@ -225,11 +226,11 @@ ls.describe("Python Backend Routing", () => {
         }
 
         if (finalState) {
+          const artifact = finalState.artifact as Record<string, unknown> | undefined;
+          const contents = artifact?.contents as Array<Record<string, unknown>> | undefined;
           ls.logOutputs({
             hasArtifact: !!finalState.artifact,
-            artifactType:
-              (finalState.artifact as Record<string, unknown>)?.contents?.[0]
-                ?.type || null,
+            artifactType: contents?.[0]?.type || null,
           });
 
           // Verify an artifact was created

@@ -31,6 +31,7 @@ from .nodes import (
 )
 from ..constants import CHARACTER_MAX, DEFAULT_INPUTS
 from ..utils import create_ai_message_from_web_results
+from ..web_search.graph import graph as web_search_graph
 
 
 # ============================================
@@ -188,35 +189,38 @@ def route_post_web_search(
 # ============================================
 
 
-async def web_search(
-    state: OpenCanvasState,
-    config: RunnableConfig,
-    *,
-    store: BaseStore,
-) -> OpenCanvasGraphReturnType:
-    """Web 搜索节点 - Phase 6 实现
-
-    NOTE: 当前为占位实现，始终返回空结果。
-    真正的 web_search 子图将在 Phase 6 实现，届时此函数将被替换为子图调用。
-
-    参考 TS: apps/agents/src/open-canvas/index.ts 使用 webSearchGraph 子图
-    """
-    # TODO(Phase 6): 替换为 web_search 子图调用
-    return {
-        "webSearchResults": [],
-    }
-
-
 async def summarizer(
     state: OpenCanvasState,
     config: RunnableConfig,
     *,
     store: BaseStore,
 ) -> OpenCanvasGraphReturnType:
-    """摘要节点 - 使用子图
-    
-    TODO Phase 6: 集成 summarizer 子图
+    """摘要节点 - 通过 SDK 异步调用 summarizer 子图
+
+    参考 TS: apps/agents/src/open-canvas/nodes/summarizer.ts
+    TS 使用 SDK 创建新线程并启动 summarizer 图运行，传递 threadId 供子图更新主线程状态。
     """
+    import os
+    from langgraph_sdk import get_client
+
+    thread_id = config.get("configurable", {}).get("thread_id")
+    if not thread_id:
+        raise ValueError("Missing thread_id in summarizer config.")
+
+    port = os.environ.get("PORT", "54367")
+    client = get_client(url=f"http://localhost:{port}")
+
+    # 创建新线程并启动 summarizer 图
+    new_thread = await client.threads.create()
+    await client.runs.create(
+        new_thread["thread_id"],
+        "summarizer",  # langgraph.json 中定义的图名
+        input={
+            "messages": state.get("_messages", []),
+            "threadId": thread_id,  # 传递主线程 ID 供子图更新
+        },
+    )
+
     return {}
 
 
@@ -272,7 +276,7 @@ def build_graph() -> StateGraph:
     builder.add_node("customAction", custom_action)
 
     # 辅助节点
-    builder.add_node("webSearch", web_search)
+    builder.add_node("webSearch", web_search_graph)  # 挂载子图
     builder.add_node("routePostWebSearch", route_post_web_search)  # 新增: 搜索后路由节点
     builder.add_node("summarizer", summarizer)
     builder.add_node("cleanState", clean_state)
@@ -335,3 +339,4 @@ def build_graph() -> StateGraph:
 
 # 编译图
 graph = build_graph().compile()
+graph.name = "open_canvas"

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const { namespace, key, value } = await req.json();
 
   const lgClient = new Client({
-    apiKey: process.env.LANGCHAIN_API_KEY,
+    apiKey: process.env.LANGSMITH_API_KEY,
     apiUrl: LANGGRAPH_API_URL,
   });
 

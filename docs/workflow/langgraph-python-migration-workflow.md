@@ -9,16 +9,16 @@
 
 ## 进度追踪
 
-| Phase | 描述 | 任务数 | Gate 条件 | 状态 |
-|-------|------|--------|-----------|------|
-| 1 | 项目初始化 | 8 | `/ok` 返回 `{"ok":true}` | ✅ |
-| 2 | 共享组件 | 3 | types/utils 可 import | ✅ |
-| 3 | 主图 - State & Prompts | 3 | State 字段与 TS 对齐 | ✅ |
-| 4 | 主图 - 节点函数 | 12 | 所有节点函数可调用 | ✅ |
-| 5 | 主图 - 控制流 | 5 | 图可编译，路由正确 | ✅ |
-| 6 | 辅助图 | 4 | 4 个子图全部可用 | ✅ |
-| 7 | 集成测试 | 6 | 关键路径全部通过 | ✅ |
-| 8 | 部署 | 3 | 生产环境可访问 | ⬜ |
+| Phase | 描述                   | 任务数 | Gate 条件                    | 状态 |
+| ----- | ---------------------- | ------ | ---------------------------- | ---- |
+| 1     | 项目初始化             | 8      | `/ok` 返回 `{"ok":true}` | ✅   |
+| 2     | 共享组件               | 3      | types/utils 可 import        | ✅   |
+| 3     | 主图 - State & Prompts | 3      | State 字段与 TS 对齐         | ✅   |
+| 4     | 主图 - 节点函数        | 12     | 所有节点函数可调用           | ✅   |
+| 5     | 主图 - 控制流          | 5      | 图可编译，路由正确           | ✅   |
+| 6     | 辅助图                 | 4      | 4 个子图全部可用             | ✅   |
+| 7     | 集成测试               | 6      | 关键路径全部通过             | ✅   |
+| 8     | 部署                   | 3      | 生产环境可访问               | ⬜   |
 
 **状态图例**: ⬜ 待开始 | 🔄 进行中 | ✅ 完成
 
@@ -28,36 +28,37 @@
 
 > ⚠️ **必读** - 以下是迁移过程中最容易出错的高风险点
 
-| 风险项 | 影响 | 相关 Phase | 状态 |
-|--------|------|------------|------|
-| **langgraph.json 路径格式** | 图无法加载 | Phase 1 | ✅ 已解决 |
-| **async vs sync 占位节点** | invoke() 失败 | Phase 1 | ✅ 已解决 |
-| **SearchResult 字段格式** | 前端无法解析搜索结果 | Phase 1 | ✅ 已解决 |
-| **camelCase 字段名** | 前端无法识别状态 | Phase 2, 3 | ⚠️ 需注意 |
-| **`_messages` reducer** | 上下文无限增长 | Phase 3 | ✅ 已实现 |
-| **`DEFAULT_INPUTS` 重置** | 状态污染下一轮 | Phase 2, 5 | ✅ 已实现 |
-| **路由条件边** | 路由丢失/错误 | Phase 5 | ✅ 已实现 |
-| **`messages` vs `_messages`** | 模型上下文错误 | Phase 3, 4 | ✅ 已完成 |
-| **CHARACTER_MAX 阈值** | 摘要永不触发 | Phase 5 | ✅ 已实现 |
-| **webSearch/summarizer 占位** | 主流程能力缺失 | Phase 6.5 | ✅ 已修复 |
-| **currentIndex 字段错误** | 版本读取错误 | Phase 6.5 | ✅ 已修复 |
-| **Store namespace 类型** | 潜在运行时错误 | Phase 6.5 | ✅ 已修复 |
-| **rewriteArtifact 流式契约** | 前端无法更新工件 | Phase 6.6 | ✅ 已修复 |
-| **TEMPERATURE_EXCLUDED_MODELS** | GPT-5 模型 API 错误 | Phase 6.6 | ✅ 已修复 |
-| **动态路由上下文文档** | 路由决策不准确 | Phase 6.6 | ✅ 已修复 |
-| **路由验证缺失** | 路由失败无错误信息 | Phase 6.6 | ✅ 已修复 |
+| 风险项                                  | 影响                 | 相关 Phase | 状态        |
+| --------------------------------------- | -------------------- | ---------- | ----------- |
+| **langgraph.json 路径格式**       | 图无法加载           | Phase 1    | ✅ 已解决   |
+| **async vs sync 占位节点**        | invoke() 失败        | Phase 1    | ✅ 已解决   |
+| **SearchResult 字段格式**         | 前端无法解析搜索结果 | Phase 1    | ✅ 已解决   |
+| **camelCase 字段名**              | 前端无法识别状态     | Phase 2, 3 | ⚠️ 需注意 |
+| **`_messages` reducer**         | 上下文无限增长       | Phase 3    | ✅ 已实现   |
+| **`DEFAULT_INPUTS` 重置**       | 状态污染下一轮       | Phase 2, 5 | ✅ 已实现   |
+| **路由条件边**                    | 路由丢失/错误        | Phase 5    | ✅ 已实现   |
+| **`messages` vs `_messages`** | 模型上下文错误       | Phase 3, 4 | ✅ 已完成   |
+| **CHARACTER_MAX 阈值**            | 摘要永不触发         | Phase 5    | ✅ 已实现   |
+| **webSearch/summarizer 占位**     | 主流程能力缺失       | Phase 6.5  | ✅ 已修复   |
+| **currentIndex 字段错误**         | 版本读取错误         | Phase 6.5  | ✅ 已修复   |
+| **Store namespace 类型**          | 潜在运行时错误       | Phase 6.5  | ✅ 已修复   |
+| **rewriteArtifact 流式契约**      | 前端无法更新工件     | Phase 6.6  | ✅ 已修复   |
+| **TEMPERATURE_EXCLUDED_MODELS**   | GPT-5 模型 API 错误  | Phase 6.6  | ✅ 已修复   |
+| **动态路由上下文文档**            | 路由决策不准确       | Phase 6.6  | ✅ 已修复   |
+| **路由验证缺失**                  | 路由失败无错误信息   | Phase 6.6  | ✅ 已修复   |
 
 ### Phase 1 已解决的问题
 
 1. **langgraph.json 路径格式**
+
    - ❌ 错误: `"./src/open_canvas/graph.py:graph"` (文件路径)
    - ✅ 正确: `"src.open_canvas.graph:graph"` (模块路径)
-
 2. **占位节点同步/异步**
+
    - ❌ 错误: `async def generate_path(...)` → invoke() 失败
    - ✅ 正确: `def generate_path(...)` → 支持 invoke() 和 ainvoke()
-
 3. **SearchResult 类型结构**
+
    - ❌ 错误: 嵌套结构 `{"page_content": ..., "metadata": {...}}`
    - ✅ 正确: 扁平 camelCase `{"pageContent": ..., "url": ..., "title": ...}`
 
@@ -71,7 +72,8 @@
 
 ### 任务清单
 
-- [x] **1.1 创建目录结构**
+- [X] **1.1 创建目录结构**
+
   ```bash
   mkdir -p apps/agents-py/src/{open_canvas/nodes,reflection,thread_title,summarizer,web_search/nodes}
   # 创建所有必要的 __init__.py
@@ -84,8 +86,8 @@
   touch apps/agents-py/src/web_search/__init__.py
   touch apps/agents-py/src/web_search/nodes/__init__.py
   ```
+- [X] **1.2 配置 pyproject.toml**
 
-- [x] **1.2 配置 pyproject.toml**
   - 使用 `uv` 作为包管理器
   - Python 版本: **3.12**
   - 核心依赖（已安装最新版本）:
@@ -95,8 +97,8 @@
     langchain-openai>=0.3.0
     langchain-anthropic>=0.3.0
     ```
+- [X] **1.3 配置 langgraph.json**
 
-- [x] **1.3 配置 langgraph.json**
   - ⚠️ **关键**: 使用模块路径格式，不是文件路径
     ```json
     {
@@ -110,8 +112,8 @@
       "env": "../.env"
     }
     ```
+- [X] **1.4 创建共享类型 (types.py)**
 
-- [x] **1.4 创建共享类型 (types.py)**
   - ⚠️ **关键**: `SearchResult` 必须使用扁平 camelCase 结构
     ```python
     class SearchResult(TypedDict):
@@ -122,13 +124,13 @@
         publishedDate: str
         pageContent: str  # 不是 page_content
     ```
+- [X] **1.5 创建工具函数 (utils.py)**
 
-- [x] **1.5 创建工具函数 (utils.py)**
   - 包含 `get_model_from_config` 函数（LLM 工厂函数）
   - 包含 `create_ai_message_from_web_results` 函数
   - ⚠️ **关键**: 字段访问必须使用 camelCase
+- [X] **1.6 创建占位图实现**
 
-- [x] **1.6 创建占位图实现**
   - ⚠️ **关键**: 占位节点必须是同步 `def`，不是 `async def`
     ```python
     # ✅ 正确 - 同步占位节点
@@ -139,11 +141,11 @@
     async def generate_path(state: OpenCanvasState) -> dict:
         return {"next": "replyToGeneralInput"}
     ```
+- [X] **1.7 添加 .gitignore**
 
-- [x] **1.7 添加 .gitignore**
   - 包含: `.venv/`, `.langgraph_api/`, `__pycache__/`, `.env`
+- [X] **1.8 验证启动**
 
-- [x] **1.8 验证启动**
   ```bash
   cd apps/agents-py
   uv venv --python 3.12
@@ -155,15 +157,16 @@
 
 ### Phase 1 实施总结
 
-| 问题 | 解决方案 |
-|------|----------|
-| Python 3.14 不兼容 | 使用 Python 3.12 |
-| langgraph.json 路径格式 | 使用模块路径 `src.module:var` |
-| SearchResult snake_case | 改为扁平 camelCase 结构 |
-| 缺少 get_model_from_config | 添加 LLM 工厂函数 |
-| async 占位节点 | 改为同步 def 支持 invoke() |
+| 问题                       | 解决方案                        |
+| -------------------------- | ------------------------------- |
+| Python 3.14 不兼容         | 使用 Python 3.12                |
+| langgraph.json 路径格式    | 使用模块路径 `src.module:var` |
+| SearchResult snake_case    | 改为扁平 camelCase 结构         |
+| 缺少 get_model_from_config | 添加 LLM 工厂函数               |
+| async 占位节点             | 改为同步 def 支持 invoke()      |
 
 **参考文件**:
+
 - 技术方案: `docs/spec/langgraph-python-migration.md` §5
 
 ---
@@ -176,9 +179,11 @@
 
 ### 任务清单
 
-- [x] **2.1 创建 constants.py**
+- [X] **2.1 创建 constants.py**
+
   - 参考 TS: `packages/shared/src/constants.ts`
   - ⚠️ **关键**: 必须与 TS 完全一致
+
   ```python
   # 消息标记常量
   OC_SUMMARIZED_MESSAGE_KEY = "__oc_summarized_message"
@@ -206,8 +211,8 @@
   # 摘要触发阈值 (~75000 tokens)
   CHARACTER_MAX = 300000
   ```
+- [X] **2.2 创建 types.py**
 
-- [x] **2.2 创建 types.py**
   - 参考 TS: `packages/shared/src/types.ts`
   - ⚠️ **关键**: 所有字段名必须保持 **camelCase**
   - 定义类型:
@@ -219,20 +224,21 @@
     - `TextHighlight(TypedDict)`: `fullMarkdown`, `markdownBlock`, `selectedText`
     - `ArtifactMarkdownV3`, `ArtifactCodeV3`, `ArtifactV3`
     - `SearchResult`
+- [X] **2.3 创建 utils.py**
 
-- [x] **2.3 创建 utils.py**
   - 参考 TS: `apps/agents/src/utils.ts` (656 行)
   - 关键函数及其契约:
 
-  | 函数 | 输入 | 输出 | 说明 |
-  |------|------|------|------|
-  | `get_model_config(name)` | 模型名 | `{provider, model_name}` | 识别 8 个提供商 |
-  | `get_model_from_config(config)` | RunnableConfig | BaseChatModel | 初始化 LLM |
-  | `get_formatted_reflections(config)` | RunnableConfig | `str \| None` | 从 Store 读取 |
-  | `create_ai_message_from_web_results(results)` | SearchResult[] | AIMessage | 转换搜索结果 |
-  | `format_messages(messages)` | Message[] | Message[] | 格式化消息 |
+  | 函数                                            | 输入           | 输出                       | 说明            |
+  | ----------------------------------------------- | -------------- | -------------------------- | --------------- |
+  | `get_model_config(name)`                      | 模型名         | `{provider, model_name}` | 识别 8 个提供商 |
+  | `get_model_from_config(config)`               | RunnableConfig | BaseChatModel              | 初始化 LLM      |
+  | `get_formatted_reflections(config)`           | RunnableConfig | `str \| None`             | 从 Store 读取   |
+  | `create_ai_message_from_web_results(results)` | SearchResult[] | AIMessage                  | 转换搜索结果    |
+  | `format_messages(messages)`                   | Message[]      | Message[]                  | 格式化消息      |
 
 **参考文件**:
+
 - TS 源码: `apps/agents/src/utils.ts`
 - TS 常量: `packages/shared/src/constants.ts`
 - 共享类型: `packages/shared/src/types.ts`
@@ -247,11 +253,13 @@
 
 ### 任务清单
 
-- [x] **3.1 创建 open_canvas/state.py**
+- [X] **3.1 创建 open_canvas/state.py**
+
   - 参考 TS: `apps/agents/src/open-canvas/state.ts` (140 行)
   - ⚠️ **关键**: 字段名必须 camelCase，与以下列表完全一致:
 
   **State 字段清单** (与 TS 对齐):
+
   ```python
   class OpenCanvasState(TypedDict):
       messages: Annotated[list[AnyMessage], add_messages]
@@ -272,10 +280,11 @@
       webSearchEnabled: Optional[bool]
       webSearchResults: Optional[list[SearchResult]]
   ```
+- [X] **3.2 实现 `_messages` reducer**
 
-- [x] **3.2 实现 `_messages` reducer**
   - 参考 TS: `apps/agents/src/open-canvas/state.ts` 第 24-71 行
   - ⚠️ **关键逻辑**: 遇到摘要消息时清空历史再追加
+
   ```python
   def is_summary_message(msg) -> bool:
       """检测是否为摘要消息"""
@@ -294,31 +303,36 @@
           return add_messages([], right_list)  # 清空历史
       return add_messages(left, right_list)
   ```
+- [X] **3.3 创建 open_canvas/prompts.py**
 
-- [x] **3.3 创建 open_canvas/prompts.py**
   - 参考 TS: `apps/agents/src/open-canvas/prompts.ts` (374 行)
   - 迁移所有 Prompt 模板（保持动态变量占位符一致）
 
 ### 审查总结（2025-12-18）
 
 **Gate 条件验证结果**
+
 - ✅ **camelCase 字段名**: `apps/agents-py/src/open_canvas/state.py` 与 TS 保持一致（未发现 snake_case 字段）
 - ✅ **`_messages` reducer**: 检测到摘要消息（`OC_SUMMARIZED_MESSAGE_KEY`）时清空历史再追加，逻辑与 TS 一致
 - ⚠️ **类型注解与 TS 对齐**: TS 中 `artifact` 为 `Annotation<ArtifactV3>`（非 `undefined`），Python 当前为 `Optional[ArtifactV3]` 且 `TypedDict(total=False)`；另 `OpenCanvasGraphReturnType` 目前为 `dict[str, Any]`，更贴近 TS 的写法应为 `OpenCanvasState`（即“Partial State”语义）
 - ✅ **`add_messages` 导入与使用**: 已从 `langgraph.graph.message` 导入并通过 `Annotated[..., add_messages]` 使用（符合 LangGraph 官方示例）
 
 **迁移质量评估**
+
 - **State**: 高（关键 reducer 行为已对齐；存在少量类型语义偏差）
 - **Prompts**: 高（模板数量齐全、占位符格式正确、XML 标签结构已与 TS 对齐）
 
 **发现的问题**
+
 - ✅ ~~**Prompts XML 标签结构未完全保持不变**~~: 已修复，Python 版本现与 TS 保持一致（`</rules-guidelines>` 开头）
 
 **改进建议**
+
 - ✅ ~~迁移一致性~~: 已选择"保持 TS 原样"方案，Python 与 TS 现已一致
 - Prompts 中对占位符使用 f-string 时继续严格使用 `{{placeholder}}` 输出 `{placeholder}`，并建议增加最小化的字符串一致性校验（例如断言关键 XML 片段存在）
 
 **参考文件**:
+
 - TS 源码: `apps/agents/src/open-canvas/state.ts`
 - TS 源码: `apps/agents/src/open-canvas/prompts.ts`
 
@@ -335,24 +349,25 @@
 ### 节点契约模板
 
 每个节点函数必须明确:
+
 - **输入字段**: 从 state 读取哪些字段
 - **输出字段**: 返回 dict 更新哪些字段
 - **错误处理**: LLM 失败、tool_calls 缺失等
 
 ### 任务清单
 
-- [x] **4.1 generate_path.py** (路由决策)
-- [x] **4.2 generate_artifact.py** (新建文档)
-- [x] **4.3 rewrite_artifact.py** (重写文档)
-- [x] **4.4 update_artifact.py** (代码高亮编辑)
-- [x] **4.5 update_highlighted_text.py** (Markdown 高亮编辑)
-- [x] **4.6 generate_followup.py** (跟进消息)
-- [x] **4.7 reply_to_general_input.py** (纯对话)
-- [x] **4.8 custom_action.py** (自定义操作)
-- [x] **4.9 reflect.py** (反思)
-- [x] **4.10 rewrite_artifact_theme.py** (文本主题变换)
-- [x] **4.11 rewrite_code_artifact_theme.py** (代码主题变换)
-- [x] **4.12 generate_title.py** (标题生成)
+- [X] **4.1 generate_path.py** (路由决策)
+- [X] **4.2 generate_artifact.py** (新建文档)
+- [X] **4.3 rewrite_artifact.py** (重写文档)
+- [X] **4.4 update_artifact.py** (代码高亮编辑)
+- [X] **4.5 update_highlighted_text.py** (Markdown 高亮编辑)
+- [X] **4.6 generate_followup.py** (跟进消息)
+- [X] **4.7 reply_to_general_input.py** (纯对话)
+- [X] **4.8 custom_action.py** (自定义操作)
+- [X] **4.9 reflect.py** (反思)
+- [X] **4.10 rewrite_artifact_theme.py** (文本主题变换)
+- [X] **4.11 rewrite_code_artifact_theme.py** (代码主题变换)
+- [X] **4.12 generate_title.py** (标题生成)
 
 ### Codex 代码审查报告 (2025-12-18)
 
@@ -360,34 +375,37 @@
 
 #### 节点评分汇总
 
-| 节点 | 评分 | 说明 |
-|------|------|------|
-| `generate_path.py` | **D** | 缺少 context-doc 管道、URL 内容包含、`_messages` 更新逻辑 |
-| `generate_artifact.py` | **C** | 核心创建功能 OK，缺少 context-document 消息 |
-| `rewrite_artifact.py` | **D+** | 主流程 OK，但 meta-update 提示词/schema 差异显著 |
-| `update_artifact.py` | **C** | 高亮更新逻辑匹配，缺少 context-document 消息 |
-| `update_highlighted_text.py` | **C** | 块替换逻辑匹配，缺少 context-document 消息 |
-| `generate_followup.py` | **B+** | 行为基本匹配 |
-| `reply_to_general_input.py` | **C** | 核心提示词组合匹配，缺少 context-document 消息 |
-| `custom_action.py` | **B+** | Store 访问 + 提示词构造匹配良好 |
-| `reflect.py` | **A** | 良好对等性 |
-| `rewrite_artifact_theme.py` | **A-** | 逻辑匹配 + 思考提取 |
-| `rewrite_code_artifact_theme.py` | **A-** | 逻辑匹配 + 思考提取 |
-| `generate_title.py` | **A** | 对等性良好 |
+| 节点                               | 评分         | 说明                                                        |
+| ---------------------------------- | ------------ | ----------------------------------------------------------- |
+| `generate_path.py`               | **D**  | 缺少 context-doc 管道、URL 内容包含、`_messages` 更新逻辑 |
+| `generate_artifact.py`           | **C**  | 核心创建功能 OK，缺少 context-document 消息                 |
+| `rewrite_artifact.py`            | **D+** | 主流程 OK，但 meta-update 提示词/schema 差异显著            |
+| `update_artifact.py`             | **C**  | 高亮更新逻辑匹配，缺少 context-document 消息                |
+| `update_highlighted_text.py`     | **C**  | 块替换逻辑匹配，缺少 context-document 消息                  |
+| `generate_followup.py`           | **B+** | 行为基本匹配                                                |
+| `reply_to_general_input.py`      | **C**  | 核心提示词组合匹配，缺少 context-document 消息              |
+| `custom_action.py`               | **B+** | Store 访问 + 提示词构造匹配良好                             |
+| `reflect.py`                     | **A**  | 良好对等性                                                  |
+| `rewrite_artifact_theme.py`      | **A-** | 逻辑匹配 + 思考提取                                         |
+| `rewrite_code_artifact_theme.py` | **A-** | 逻辑匹配 + 思考提取                                         |
+| `generate_title.py`              | **A**  | 对等性良好                                                  |
 
 #### 关键问题
 
 **Critical (关键)**:
+
 1. **Context Document Messages 缺失**: TS 在多个节点注入 `createContextDocumentMessages(config)`，Python 版本未实现
 2. **URL Content Inclusion 缺失**: `generate_path.py` 未实现 TS 的 `includeURLContents` 功能
 3. **rewrite_artifact meta-update 差异**: 提示词 + schema 与 TS 不一致
 
 **Major (主要)**:
+
 1. **Tool Naming 差异**: Python 使用 Pydantic 类名，TS 使用显式工具名
 2. **Optional System Prompt 缺失**: TS 支持 `optionallyGetSystemPromptFromConfig`
 3. **Reflection 获取不一致**: 部分节点手动实现，部分使用 `get_formatted_reflections`
 
 **Minor (次要)**:
+
 - 未使用的导入
 - Run naming/tracing 缺失
 - Schema 严格性差异
@@ -401,6 +419,7 @@
 5. 收紧 Pydantic Schema 约束
 
 **参考文件**:
+
 - TS 源码目录: `apps/agents/src/open-canvas/nodes/`
 - Python 目标目录: `apps/agents-py/src/open_canvas/nodes/`
 
@@ -416,28 +435,32 @@
 
 ### 任务清单
 
-- [x] **5.1 实现 route_node 函数**
+- [X] **5.1 实现 route_node 函数**
+
   - 参考 TS: `apps/agents/src/open-canvas/index.ts` 第 20-28 行
+
   ```python
   def route_node(state: OpenCanvasState) -> Send:
       if not state.get("next"):
           raise ValueError("'next' state field not set.")
       return Send(state["next"], dict(state))
   ```
+- [X] **5.2 实现 clean_state 函数**
 
-- [x] **5.2 实现 clean_state 函数**
   - 参考 TS: `apps/agents/src/open-canvas/index.ts` 第 30-34 行
   - ⚠️ **关键**: 必须使用 `DEFAULT_INPUTS` 重置状态，防止污染下一轮
+
   ```python
   def clean_state(state: OpenCanvasState) -> dict:
       return DEFAULT_INPUTS.copy()
   ```
+- [X] **5.3 实现 conditionally_generate_title 函数**
 
-- [x] **5.3 实现 conditionally_generate_title 函数**
   - 参考 TS: `apps/agents/src/open-canvas/index.ts` 第 64-72 行
   - **逻辑**:
     - 如果 `messages` 长度 > 2 → 调用 `simple_token_calculator`
     - 否则 → 返回 `"generateTitle"`
+
   ```python
   def conditionally_generate_title(state: OpenCanvasState) -> str:
       if len(state.get("messages", [])) > 2:
@@ -457,12 +480,13 @@
                       total_chars += len(c.text)
       return "summarizer" if total_chars > CHARACTER_MAX else END
   ```
+- [X] **5.4 实现 route_post_web_search 节点**
 
-- [x] **5.4 实现 route_post_web_search 节点**
   - 参考 TS: `apps/agents/src/open-canvas/index.ts` 第 78-106 行
   - **逻辑**:
     - 如果无搜索结果 → `Send` 到 `generateArtifact/rewriteArtifact`
     - 如果有搜索结果 → `Command` 更新 `messages/_messages` 并路由
+
   ```python
   def route_post_web_search(state: OpenCanvasState) -> Send | Command:
       includes_artifacts = len(state.get("artifact", {}).get("contents", [])) > 1
@@ -481,11 +505,12 @@
           }
       )
   ```
+- [X] **5.5 组装 StateGraph**
 
-- [x] **5.5 组装 StateGraph**
   - 参考 TS: `apps/agents/src/open-canvas/index.ts` 第 108-162 行
 
   **节点清单** (共 15 个):
+
   ```python
   builder = StateGraph(OpenCanvasState)
   builder.add_node("generatePath", generate_path)
@@ -507,6 +532,7 @@
   ```
 
   **边配置**:
+
   ```python
   # 起始边
   builder.add_edge(START, "generatePath")
@@ -542,11 +568,13 @@
   ```
 
 **参考文件**:
+
 - TS 源码: `apps/agents/src/open-canvas/index.ts`
 
 ### Phase 5 实施总结 (2025-12-19)
 
 **Gate 条件验证结果**:
+
 - ✅ **图编译成功**: 17 个节点 (含 `__start__`)
 - ✅ **`route_node` 正确路由**: 9 个目标节点全部通过 Send 动态路由测试
 - ✅ **`conditionally_generate_title` 分支正确**: 3 个分支 (generateTitle/summarizer/END)
@@ -555,18 +583,20 @@
 
 **关键技术决策**:
 
-| 决策点 | TS 实现 | Python 实现 | 说明 |
-|--------|---------|-------------|------|
-| `routeNode` 路由 | `new Send(node, state)` | `Send(node, dict(state))` | 动态路由 + 状态传递 |
-| `routePostWebSearch` | 节点返回 `Send \| Command` | 节点返回 `Union[Send, Command]` | 搜索后处理 |
-| 条件边映射 | `[...]` 列表 | `[...]` 列表 | 显式声明目标节点 |
+| 决策点                 | TS 实现                     | Python 实现                       | 说明                |
+| ---------------------- | --------------------------- | --------------------------------- | ------------------- |
+| `routeNode` 路由     | `new Send(node, state)`   | `Send(node, dict(state))`       | 动态路由 + 状态传递 |
+| `routePostWebSearch` | 节点返回 `Send \| Command` | 节点返回 `Union[Send, Command]` | 搜索后处理          |
+| 条件边映射             | `[...]` 列表              | `[...]` 列表                    | 显式声明目标节点    |
 
 **与 TS 的差异**:
+
 - **类型注解**: Python 使用 `Union[Send, Command]` 而非 TS 的 `Send | Command`
 - **状态传递**: `dict(state)` 确保状态深拷贝
 - **空值检查**: Python 需要显式检查 `None` 和空列表
 
 **验证命令**:
+
 ```bash
 cd apps/agents-py
 source .venv/bin/activate
@@ -581,30 +611,34 @@ python -c "from src.open_canvas.graph import graph; print(f'Nodes: {len(graph.no
 
 #### 发现的问题
 
-| # | 问题 | 严重性 | 状态 |
-|---|------|--------|------|
-| 1 | `simple_token_calculator` 内容解析覆盖不完整 | 🔴 高 | ✅ 已修复 |
-| 2 | 返回 `"__end__"` 字符串而非 `END` 常量 | 🟡 中 | ✅ 已修复 |
-| 3 | `webSearch` 节点是占位实现 | ⏳ 延迟 | ✅ 已标注 |
-| 4 | 缺少 `runName` 编译配置 | 🟢 低 | ❌ 不适用 |
+| # | 问题                                           | 严重性  | 状态      |
+| - | ---------------------------------------------- | ------- | --------- |
+| 1 | `simple_token_calculator` 内容解析覆盖不完整 | 🔴 高   | ✅ 已修复 |
+| 2 | 返回 `"__end__"` 字符串而非 `END` 常量     | 🟡 中   | ✅ 已修复 |
+| 3 | `webSearch` 节点是占位实现                   | ⏳ 延迟 | ✅ 已标注 |
+| 4 | 缺少 `runName` 编译配置                      | 🟢 低   | ❌ 不适用 |
 
 #### 问题详情
 
 **1. 内容解析覆盖不完整**
+
 - **TS**: `msg.content.flatMap(c => "text" in c ? c.text : [])`
 - **Python 原实现**: 仅处理 `isinstance(content, list)` + dict 元素
 - **修复**: 新增 `hasattr(c, "text")` 分支支持对象属性访问
 
 **2. END 常量使用**
+
 - **TS**: `return END`
 - **Python 原实现**: `return "__end__"`
 - **修复**: 改为 `return END`
 
 **3. webSearch 占位实现**
+
 - **问题**: 当前始终返回空结果，实际 web 搜索功能待 Phase 6 实现
 - **处理**: 在 docstring 中明确标注占位行为
 
 **4. runName 配置 (不适用)**
+
 - **TS**: `graph.compile().withConfig({ runName: "open_canvas" })`
 - **结论**: Python SDK 不支持编译时 `run_name` 配置，需在运行时通过 `config` 参数传递
 
@@ -678,31 +712,32 @@ async def web_search(...) -> OpenCanvasGraphReturnType:
 
 ### 任务清单
 
-- [x] **6.1 reflection 图**
+- [X] **6.1 reflection 图**
+
   - 参考 TS: `apps/agents/src/reflection/`
   - 功能: 生成风格规则和用户事实，存储到 LangGraph Store
   - ⚠️ 使用 `store.aget()` / `store.aput()` 进行 async 操作
   - **文件**:
     - `src/reflection/prompts.py` - REFLECT_SYSTEM_PROMPT, REFLECT_USER_PROMPT
     - `src/reflection/graph.py` - 完整 Store 操作实现
+- [X] **6.2 thread_title 图**
 
-- [x] **6.2 thread_title 图**
   - 参考 TS: `apps/agents/src/thread-title/`
   - 功能: 使用 GPT-4o-mini 生成对话标题
   - ⚠️ 使用 LangGraph SDK Client `get_client(url=...)` 更新线程元数据
   - **文件**:
     - `src/thread_title/prompts.py` - TITLE_SYSTEM_PROMPT, TITLE_USER_PROMPT
     - `src/thread_title/graph.py` - SDK Client 实现
+- [X] **6.3 summarizer 图**
 
-- [x] **6.3 summarizer 图**
   - 参考 TS: `apps/agents/src/summarizer/`
   - 功能: 压缩长对话
   - ⚠️ 标记摘要消息以触发 reducer 清空历史 (`OC_SUMMARIZED_MESSAGE_KEY`)
   - **文件**:
     - `src/summarizer/state.py` - 添加 `threadId` 字段
     - `src/summarizer/graph.py` - SDK Client thread state update
+- [X] **6.4 web_search 图**
 
-- [x] **6.4 web_search 图**
   - 参考 TS: `apps/agents/src/web-search/`
   - 功能: 3 节点图 (classifyMessage → queryGenerator → search)
   - ⚠️ 使用 `exa-py` API，需要 `EXA_API_KEY`
@@ -714,18 +749,19 @@ async def web_search(...) -> OpenCanvasGraphReturnType:
     - `src/web_search/graph.py` - 3 节点图组装
 
 **参考文件**:
+
 - TS 源码目录: `apps/agents/src/{reflection,thread-title,summarizer,web-search}/`
 
 ### Phase 6 技术模式对照
 
-| 模式 | TypeScript | Python |
-|------|-----------|--------|
-| Store 读取 | `await store.get()` | `await store.aget()` |
-| Store 写入 | `await store.put()` | `await store.aput()` |
-| SDK Client | `new Client({apiUrl})` | `get_client(url=...)` |
-| Tool 绑定 | `.bindTools([tool], {tool_choice})` | `.bind_tools([Tool], tool_choice=...)` |
-| 结构化输出 | `.withStructuredOutput(schema)` | `.with_structured_output(Schema)` |
-| 日期格式化 | `format(new Date(), "PPpp")` | `datetime.now().strftime('%b %d, %Y, %I:%M %p')` |
+| 模式       | TypeScript                            | Python                                             |
+| ---------- | ------------------------------------- | -------------------------------------------------- |
+| Store 读取 | `await store.get()`                 | `await store.aget()`                             |
+| Store 写入 | `await store.put()`                 | `await store.aput()`                             |
+| SDK Client | `new Client({apiUrl})`              | `get_client(url=...)`                            |
+| Tool 绑定  | `.bindTools([tool], {tool_choice})` | `.bind_tools([Tool], tool_choice=...)`           |
+| 结构化输出 | `.withStructuredOutput(schema)`     | `.with_structured_output(Schema)`                |
+| 日期格式化 | `format(new Date(), "PPpp")`        | `datetime.now().strftime('%b %d, %Y, %I:%M %p')` |
 
 ### Phase 6 验证结果
 
@@ -742,6 +778,7 @@ async def web_search(...) -> OpenCanvasGraphReturnType:
 ```
 
 **验证命令**:
+
 ```bash
 cd apps/agents-py
 source .venv/bin/activate
@@ -755,22 +792,24 @@ langgraph dev --port 54367
 
 #### 审查评分汇总
 
-| 图 | 评分 | 说明 |
-|----|------|------|
-| reflection | **A** | 完全一致，Store 注入遵循最佳实践 |
-| thread_title | **A-** | 高度一致，SDK Client 调用正确 |
-| summarizer | **A** | 完全一致，常量正确导入 |
-| web_search | **B+** | 核心逻辑一致，Exa 结果转换需验证 |
+| 图           | 评分         | 说明                             |
+| ------------ | ------------ | -------------------------------- |
+| reflection   | **A**  | 完全一致，Store 注入遵循最佳实践 |
+| thread_title | **A-** | 高度一致，SDK Client 调用正确    |
+| summarizer   | **A**  | 完全一致，常量正确导入           |
+| web_search   | **B+** | 核心逻辑一致，Exa 结果转换需验证 |
 
 #### 关键发现
 
 **高优先级**:
+
 - **WebSearch `SearchResult` 类型转换差异**
   - TS: `ExaRetriever` 自动返回 `DocumentInterface`
   - Python: 手动构造 `SearchResult` 对象
   - 需验证字段映射一致性 (已修复 `publishedDate` 字段访问)
 
 **已确认的良好实践**:
+
 - ✅ Store 注入通过 `store: BaseStore` 参数
 - ✅ 常量从 `constants.py` 导入
 - ✅ Prompt 模板完全一致
@@ -812,31 +851,32 @@ SearchResult(
 
 #### 修复清单
 
-| 问题 | 严重性 | 修复内容 |
-|------|--------|----------|
-| **C1** webSearch/summarizer 占位实现 | Critical | webSearch 挂载子图；summarizer 改用 SDK 调用 |
-| **C2** currentIndex 字段错误 | Critical | reflection/thread_title 中 `currentContentIndex` → `currentIndex` |
-| **C3** namespace list/tuple 混用 | Critical | constants.py 和 utils.py 统一使用 tuple |
-| **H1** graph.name 可观测性 | High | 添加 `graph.name = "open_canvas"` |
+| 问题                                       | 严重性   | 修复内容                                                               |
+| ------------------------------------------ | -------- | ---------------------------------------------------------------------- |
+| **C1** webSearch/summarizer 占位实现 | Critical | webSearch 挂载子图；summarizer 改用 SDK 调用                           |
+| **C2** currentIndex 字段错误         | Critical | reflection/thread_title 中 `currentContentIndex` → `currentIndex` |
+| **C3** namespace list/tuple 混用     | Critical | constants.py 和 utils.py 统一使用 tuple                                |
+| **H1** graph.name 可观测性           | High     | 添加 `graph.name = "open_canvas"`                                    |
 
 #### 修改文件
 
 1. **`src/open_canvas/graph.py`**
+
    - 添加导入: `from ..web_search.graph import graph as web_search_graph`
    - webSearch 节点: 占位函数 → 挂载 `web_search_graph` 子图
    - summarizer 节点: 占位函数 → SDK 异步调用 (仿 TS 实现)
    - 添加: `graph.name = "open_canvas"`
-
 2. **`src/reflection/graph.py`** 第 51 行
-   - `currentContentIndex` → `currentIndex`
 
+   - `currentContentIndex` → `currentIndex`
 3. **`src/thread_title/graph.py`** 第 45 行
+
    - `currentContentIndex` → `currentIndex`
-
 4. **`src/constants.py`** 第 21 行
-   - `["context_documents"]` → `("context_documents",)`
 
+   - `["context_documents"]` → `("context_documents",)`
 5. **`src/utils.py`** 第 138 行
+
    - `["memories", assistant_id]` → `("memories", assistant_id)`
 
 #### 验证结果
@@ -856,12 +896,12 @@ SearchResult(
 
 #### 修复清单
 
-| 问题 | 严重性 | 修复内容 | 文件 |
-|------|--------|----------|------|
-| **rewriteArtifact 流式契约** | Critical | 添加 `run_name` 配置到模型调用 | `rewrite_artifact.py:130,314` |
-| **TEMPERATURE_EXCLUDED_MODELS** | Critical | 同步 gpt-5*/o4-mini 到 Python | `constants.py:57-66` |
-| **动态路由上下文文档** | Warning | 注入 `context_document_messages` | `generate_path.py:510-517` |
-| **路由验证缺失** | Warning | 添加 `if not route: raise ValueError(...)` | `generate_path.py:655-658` |
+| 问题                                  | 严重性   | 修复内容                                     | 文件                            |
+| ------------------------------------- | -------- | -------------------------------------------- | ------------------------------- |
+| **rewriteArtifact 流式契约**    | Critical | 添加 `run_name` 配置到模型调用             | `rewrite_artifact.py:130,314` |
+| **TEMPERATURE_EXCLUDED_MODELS** | Critical | 同步 gpt-5*/o4-mini 到 Python                | `constants.py:57-66`          |
+| **动态路由上下文文档**          | Warning  | 注入 `context_document_messages`           | `generate_path.py:510-517`    |
+| **路由验证缺失**                | Warning  | 添加 `if not route: raise ValueError(...)` | `generate_path.py:655-658`    |
 
 #### 修改详情
 
@@ -940,6 +980,7 @@ if not route:
 ### 实施总结
 
 #### 测试基础设施
+
 已创建完整的 pytest 测试框架：
 
 ```
@@ -956,6 +997,7 @@ apps/agents-py/tests/
 ```
 
 #### E2E 测试配置
+
 已创建 Playwright E2E 测试框架：
 
 ```
@@ -971,6 +1013,7 @@ apps/web/
 ```
 
 #### API 评估测试
+
 已创建 LangSmith 评估测试：
 
 ```
@@ -980,6 +1023,7 @@ packages/evals/src/api/python-backend.eval.ts
 #### 测试结果
 
 **Python 单元测试**: 62 passed, 6 skipped
+
 ```bash
 cd apps/agents-py && uv run pytest tests/ -v
 
@@ -993,6 +1037,7 @@ cd apps/agents-py && uv run pytest tests/ -v
 ```
 
 **集成测试**: 13 passed, 4 skipped
+
 ```bash
 cd apps/agents-py && uv run pytest tests/integration/ -v
 ```
@@ -1015,32 +1060,33 @@ cd apps/agents-py && uv run pytest tests/ --cov=src --cov-report=term-missing
 
 ### 原始任务清单
 
-- [x] **7.1 单元测试**
+- [X] **7.1 单元测试**
+
   - 函数存在性和可调用性测试
   - 辅助函数基本功能测试
   - 类型定义存在性测试
+- [X] **7.2 路由矩阵测试**
 
-- [x] **7.2 路由矩阵测试**
   - `generate_path` 路由函数测试
   - `extract_urls` URL 提取测试
   - 路由决策相关类型测试
+- [X] **7.3 本地启动验证**
 
-- [x] **7.3 本地启动验证**
   ```bash
   cd apps/agents-py && uv run langgraph dev --port 54367
   cd apps/web && yarn dev
   # 访问 http://localhost:3000 ✅
   ```
+- [X] **7.4 API 端点测试**
 
-- [x] **7.4 API 端点测试**
   - 通过集成测试验证图编译
   - 5 个图全部成功加载
+- [X] **7.5 流式传输测试**
 
-- [x] **7.5 流式传输测试**
   - E2E 测试框架已配置
   - 等待手动验证
+- [X] **7.6 功能回归测试**
 
-- [x] **7.6 功能回归测试**
   - E2E 测试用例已创建
   - Gate 检查脚本已就绪
 
@@ -1055,17 +1101,18 @@ cd apps/agents-py && uv run pytest tests/ --cov=src --cov-report=term-missing
 ### 任务清单
 
 - [ ] **8.1 Docker 构建**
+
   ```bash
   cd apps/agents-py
   langgraph build -t open-canvas-agents:latest
   ```
-
 - [ ] **8.2 Docker Compose 配置**
+
   - 容器内端口: 8000
   - 宿主映射端口: 54367
   - 环境变量注入: `--env-file .env`
-
 - [ ] **8.3 生产环境部署**
+
   - K8s/CI/CD 配置
   - 监控和日志
 
@@ -1073,54 +1120,61 @@ cd apps/agents-py && uv run pytest tests/ --cov=src --cov-report=term-missing
 
 ## 验证清单
 
-### 功能验证 (12 项)
+### 功能验证(12 项)
 
-| 功能 | 验证方法 | 状态 |
-|------|----------|------|
-| 创建新 Markdown 文档 | 发送 "写一篇关于..." | ⬜ |
-| 创建新代码文档 | 发送 "写一个 Python 函数..." | ⬜ |
-| 代码高亮编辑 | 选中代码后发送修改请求 | ⬜ |
-| Markdown 高亮编辑 | 选中文本后发送修改请求 | ⬜ |
-| 快捷操作 - 翻译 | 使用翻译快捷按钮 | ⬜ |
-| 快捷操作 - 长度调整 | 使用长度调整按钮 | ⬜ |
-| 自定义操作 | 创建并执行自定义操作 | ⬜ |
-| 网络搜索 | 启用搜索后发送请求 | ⬜ |
-| 对话压缩 | 长对话后检查消息历史 | ⬜ |
-| 标题生成 | 检查对话标题自动更新 | ⬜ |
-| 反思/记忆 | 验证风格规则被记住 | ⬜ |
-| 版本历史 | 检查 artifact 版本切换 | ⬜ |
+| 功能                 | 验证方法                     | 状态 |
+| -------------------- | ---------------------------- | ---- |
+| 创建新 Markdown 文档 | 发送 "写一篇关于..."         | ⬜   |
+| 创建新代码文档       | 发送 "写一个 Python 函数..." | ⬜   |
+| 代码高亮编辑         | 选中代码后发送修改请求       | ⬜   |
+| Markdown 高亮编辑    | 选中文本后发送修改请求       | ⬜   |
+| 快捷操作 - 翻译      | 使用翻译快捷按钮             | ⬜   |
+| 快捷操作 - 长度调整  | 使用长度调整按钮             | ⬜   |
+| 自定义操作           | 创建并执行自定义操作         | ⬜   |
+| 网络搜索             | 启用搜索后发送请求           | ⬜   |
+| 对话压缩             | 长对话后检查消息历史         | ⬜   |
+| 标题生成             | 检查对话标题自动更新         | ⬜   |
+| 反思/记忆            | 验证风格规则被记住           | ⬜   |
+| 版本历史             | 检查 artifact 版本切换       | ⬜   |
 
 ### API 兼容性 (4 项)
 
-| 检查项 | 状态 |
-|--------|------|
-| `/health` 端点 | ⬜ |
-| `/assistants` 端点 | ⬜ |
-| `/threads` 端点 | ⬜ |
-| 流式传输 SSE | ⬜ |
+| 检查项               | 状态 |
+| -------------------- | ---- |
+| `/health` 端点     | ⬜   |
+| `/assistants` 端点 | ⬜   |
+| `/threads` 端点    | ⬜   |
+| 流式传输 SSE         | ⬜   |
 
 ---
 
 ## 常见问题
 
 ### Q: State 字段名必须用 camelCase 吗？
+
 **A**: ⚠️ **必须**。LangGraph Server 不会自动转换。
 
 ### Q: `_messages` reducer 为什么重要？
+
 **A**: 遇到摘要消息时清空历史。否则上下文无限增长。
 
 ### Q: `DEFAULT_INPUTS` 重置为什么重要？
+
 **A**: 防止上一轮的 `language`/`artifactLength` 等 flags 污染下一轮路由。
 
 ### Q: 路由到底有多少个目标节点？
+
 **A**: **9 个** (见 Phase 5.5)，不是 13 个。
 
 ### Q: `messages` 和 `_messages` 有什么区别？
+
 **A**:
+
 - `messages`: 对 UI 友好的完整对话流
 - `_messages`: 给模型的内部上下文（可能被摘要压缩）
 
 ### Q: 摘要什么时候触发？
+
 **A**: 当 `_messages` 总字符数超过 `CHARACTER_MAX` (300000) 时。
 
 ---

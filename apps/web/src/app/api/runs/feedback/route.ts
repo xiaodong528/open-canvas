@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     }
 
     const lsClient = new Client({
-      apiKey: process.env.LANGCHAIN_API_KEY,
+      apiKey: process.env.LANGSMITH_API_KEY,
     });
 
     const feedback = await lsClient.createFeedback(runId, feedbackKey, {
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     }
 
     const lsClient = new Client({
-      apiKey: process.env.LANGCHAIN_API_KEY,
+      apiKey: process.env.LANGSMITH_API_KEY,
     });
 
     const runFeedback: Feedback[] = [];

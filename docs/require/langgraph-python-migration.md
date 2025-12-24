@@ -866,7 +866,7 @@ SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=xxx
 
 # LangSmith (可选)
-LANGCHAIN_API_KEY=xxx
+LANGSMITH_API_KEY=xxx
 LANGCHAIN_TRACING_V2=true
 LANGCHAIN_PROJECT=open-canvas
 

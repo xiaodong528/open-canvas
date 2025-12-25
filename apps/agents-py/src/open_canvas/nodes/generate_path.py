@@ -12,9 +12,12 @@ Generate Path 节点
 - 消息状态正确返回 (messages/_messages)
 """
 
+import logging
 import re
 import uuid
 from typing import Literal
+
+logger = logging.getLogger(__name__)
 
 from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage
 from langgraph.store.base import BaseStore
@@ -77,7 +80,9 @@ def extract_urls(text: str) -> list[str]:
 
     # 再提取纯文本中的 URL
     for url in PLAIN_URL_PATTERN.findall(processed_text):
-        urls.add(url)
+        # 移除尾部标点符号 (句号、逗号等不应成为 URL 的一部分)
+        cleaned_url = url.rstrip(".,;:!?'\")")
+        urls.add(cleaned_url)
 
     return list(urls)
 
@@ -450,6 +455,7 @@ def _find_existing_doc_message(messages: list[BaseMessage]) -> HumanMessage | No
 async def _dynamic_determine_path(
     state: OpenCanvasState,
     config: RunnableConfig,
+    new_messages: list[BaseMessage] | None = None,
 ) -> str:
     """
     使用 LLM 动态决定路由
@@ -490,41 +496,58 @@ async def _dynamic_determine_path(
         "{currentArtifactPrompt}", current_artifact_prompt
     )
 
+    # 调试日志 - 打印 formatted_prompt
+    logger.info(f"[DEBUG] artifact_options: {artifact_options[:100]}...")
+    logger.info(f"[DEBUG] recent_messages: {recent_messages}")
+    logger.info(f"[DEBUG] current_artifact_prompt: {current_artifact_prompt}")
+    logger.info(f"[DEBUG] formatted_prompt (last 500 chars): ...{formatted_prompt[-500:]}")
+
     # 获取模型
     model = get_model_from_config(config, temperature=0, is_tool_calling=True)
+    model_name = config.get("configurable", {}).get("customModelName", "unknown")
+    logger.info(f"[DEBUG] model type: {type(model).__name__}, model_name: {model_name}")
 
-    # 创建动态 schema
-    route_options = ["replyToGeneralInput", artifact_route]
+    # 创建动态 schema - 与 TS 版本保持一致
+    # 参考: apps/agents/src/open-canvas/nodes/generate-path/dynamic-determine-path.ts:71-88
+    # 注意: 将 artifact_route 放在第一位，影响 LLM 的默认偏好
+    route_options = [artifact_route, "replyToGeneralInput"]
 
-    class DynamicRouteSchema(BaseModel):
+    class RouteQuerySchema(BaseModel):
+        """The route to take based on the user's query."""
         route: Literal[tuple(route_options)] = Field(  # type: ignore
             description="The route to take based on the user's query."
         )
 
-    # 绑定工具
+    # 绑定工具 - 使用与 TS 相同的 tool_choice 名称
     model_with_tool = model.bind_tools(
-        [DynamicRouteSchema],
-        tool_choice="DynamicRouteSchema",
+        [RouteQuerySchema],
+        tool_choice="RouteQuerySchema",
     )
+    logger.info(f"[DEBUG] route_options: {route_options}")
 
     # 获取上下文文档消息 - 与 TS 版本保持一致
     # 参考: apps/agents/src/open-canvas/nodes/generate-path/dynamic-determine-path.ts:90
     context_document_messages = await create_context_document_messages(config)
 
-    # 调用模型 - 注入上下文文档以提供完整信息给路由决策
+    # 调用模型 - 注入上下文文档和新消息以提供完整信息给路由决策
+    # 与 TS 版本保持一致: [...contextDocumentMessages, ...newMessages, formattedPrompt]
     result = await model_with_tool.ainvoke([
         *context_document_messages,
+        *(new_messages if new_messages else []),
         HumanMessage(content=formatted_prompt),
     ])
 
     # 提取路由结果
+    logger.info(f"[DEBUG] LLM result.tool_calls: {result.tool_calls}")
     if result.tool_calls:
         args = result.tool_calls[0].get("args", {})
         route = args.get("route")
+        logger.info(f"[DEBUG] chosen route: {route}")
         if route in route_options:
             return route
 
     # 默认路由
+    logger.info("[DEBUG] falling back to replyToGeneralInput")
     return "replyToGeneralInput"
 
 
@@ -646,10 +669,12 @@ async def generate_path(
                     ]
 
     # ===== LLM 动态路由 =====
+    # 传递 new_messages 使 LLM 看到用户最新消息，与 TS 版本保持一致
 
     route = await _dynamic_determine_path(
         {**state, "_messages": new_internal_messages},
         config,
+        new_messages=new_messages,
     )
 
     # 验证路由结果 - 与 TS 版本保持一致

@@ -141,11 +141,15 @@ def empty_state() -> dict[str, Any]:
 
 @pytest.fixture
 def mock_route_response():
-    """Create a mock for routing decisions."""
+    """Create a mock for routing decisions.
 
-    def _create_mock(next_node: str):
+    Note: The RouteQuerySchema in generate_path.py uses 'route' field,
+    not 'next'. This matches the actual LLM tool response format.
+    """
+
+    def _create_mock(route: str):
         mock = MagicMock()
-        mock.tool_calls = [{"args": {"next": next_node}}]
+        mock.tool_calls = [{"args": {"route": route}}]
         return mock
 
     return _create_mock
@@ -179,6 +183,273 @@ def mock_llm():
     mock.bind_tools = MagicMock(return_value=mock)
     mock.with_structured_output = MagicMock(return_value=mock)
     return mock
+
+
+# ============================================
+# Enhanced mock fixtures for functional testing
+# ============================================
+
+
+@pytest.fixture
+def mock_model_response():
+    """Factory for creating mock LLM responses with tool calls.
+
+    Usage:
+        response = mock_model_response(
+            tool_calls=[{"args": {"next": "generateArtifact"}}],
+            content="I'll create an artifact for you."
+        )
+    """
+
+    def _create_response(
+        tool_calls: list[dict] = None,
+        content: str = "",
+        additional_kwargs: dict = None,
+    ):
+        mock = MagicMock()
+        mock.tool_calls = tool_calls or []
+        mock.content = content
+        mock.additional_kwargs = additional_kwargs or {}
+        return mock
+
+    return _create_response
+
+
+@pytest.fixture
+def mock_streaming_response():
+    """Factory for creating mock streaming LLM responses.
+
+    Simulates async iterator for streaming responses.
+
+    Usage:
+        async for chunk in mock_streaming_response(["Hello", " ", "World"]):
+            print(chunk.content)
+    """
+
+    def _create_streaming(chunks: list[str]):
+        async def async_generator():
+            for chunk in chunks:
+                mock_chunk = MagicMock()
+                mock_chunk.content = chunk
+                yield mock_chunk
+
+        return async_generator()
+
+    return _create_streaming
+
+
+@pytest.fixture
+def mock_reflection_store(mock_store):
+    """Pre-populated store with reflections for testing.
+
+    Returns:
+        InMemoryStore with sample reflection data
+    """
+    import asyncio
+
+    async def setup_store():
+        await mock_store.aput(
+            ("memories", "test-assistant-id"),
+            "reflection",
+            {
+                "styleRules": ["Use concise language", "Prefer bullet points"],
+                "content": ["User prefers Python", "User works in data science"],
+            },
+        )
+        return mock_store
+
+    # Run setup synchronously for fixture
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    try:
+        loop.run_until_complete(setup_store())
+    finally:
+        loop.close()
+
+    return mock_store
+
+
+@pytest.fixture
+def mock_llm_with_tool_response(mock_route_response):
+    """Create a mock LLM that returns a specific routing decision.
+
+    Usage:
+        llm = mock_llm_with_tool_response("generateArtifact")
+        result = await llm.ainvoke(messages)
+        assert result.tool_calls[0]["args"]["next"] == "generateArtifact"
+    """
+
+    def _create_llm(next_node: str):
+        mock = AsyncMock()
+        mock.ainvoke = AsyncMock(return_value=mock_route_response(next_node))
+        mock.bind_tools = MagicMock(return_value=mock)
+        mock.with_structured_output = MagicMock(return_value=mock)
+        return mock
+
+    return _create_llm
+
+
+@pytest.fixture
+def mock_artifact_generation_response():
+    """Factory for creating mock artifact generation responses.
+
+    Usage:
+        response = mock_artifact_generation_response(
+            code="print('hello')",
+            title="Hello World",
+            artifact_type="code",
+            language="python"
+        )
+    """
+
+    def _create_response(
+        code: str = "",
+        full_markdown: str = "",
+        title: str = "Untitled",
+        artifact_type: str = "code",
+        language: str = "python",
+    ):
+        mock = MagicMock()
+
+        if artifact_type == "code":
+            mock.tool_calls = [
+                {
+                    "args": {
+                        "artifact": code,
+                        "title": title,
+                        "type": artifact_type,
+                        "language": language,
+                    }
+                }
+            ]
+        else:
+            mock.tool_calls = [
+                {
+                    "args": {
+                        "artifact": full_markdown,
+                        "title": title,
+                        "type": artifact_type,
+                    }
+                }
+            ]
+
+        mock.content = f"Created {artifact_type} artifact: {title}"
+        return mock
+
+    return _create_response
+
+
+@pytest.fixture
+def sample_web_search_results() -> list[dict[str, Any]]:
+    """Sample web search results matching SearchResult structure."""
+    return [
+        {
+            "pageContent": "Python is a high-level programming language.",
+            "metadata": {
+                "id": "result-1",
+                "url": "https://python.org",
+                "title": "Python Official Website",
+                "author": "Python Foundation",
+                "publishedDate": "2024-01-01",
+                "image": None,
+                "favicon": "https://python.org/favicon.ico",
+            },
+        },
+        {
+            "pageContent": "Learn Python programming with tutorials.",
+            "metadata": {
+                "id": "result-2",
+                "url": "https://realpython.com",
+                "title": "Real Python Tutorials",
+                "author": "Real Python Team",
+                "publishedDate": "2024-06-15",
+                "image": None,
+                "favicon": "https://realpython.com/favicon.ico",
+            },
+        },
+    ]
+
+
+@pytest.fixture
+def sample_code_highlight() -> dict[str, Any]:
+    """Sample code highlight for testing update_artifact."""
+    return {
+        "startCharIndex": 0,
+        "endCharIndex": 20,
+        "selectedText": "def fibonacci(n):",
+    }
+
+
+@pytest.fixture
+def sample_text_highlight() -> dict[str, Any]:
+    """Sample text highlight for testing update_highlighted_text."""
+    return {
+        "fullMarkdown": "# Hello World\n\nThis is a sample document.",
+        "markdownBlock": "This is a sample document.",
+        "selectedText": "sample",
+    }
+
+
+@pytest.fixture
+def state_with_code_highlight(sample_state, sample_code_highlight) -> dict[str, Any]:
+    """State with code highlight for testing update_artifact."""
+    return {
+        **sample_state,
+        "highlightedCode": sample_code_highlight,
+    }
+
+
+@pytest.fixture
+def state_with_text_highlight(sample_text_artifact, sample_text_highlight) -> dict[str, Any]:
+    """State with text highlight for testing update_highlighted_text."""
+    return {
+        "messages": [HumanMessage(content="Update the highlighted text")],
+        "_messages": [HumanMessage(content="Update the highlighted text")],
+        "artifact": sample_text_artifact,
+        "highlightedText": sample_text_highlight,
+        "highlightedCode": None,
+        "next": None,
+    }
+
+
+# ============================================
+# Config variants for different model providers
+# ============================================
+
+
+@pytest.fixture
+def openai_config() -> dict[str, Any]:
+    """Config for OpenAI models."""
+    return {
+        "configurable": {
+            "customModelName": "gpt-4o",
+            "assistant_id": "test-assistant-id",
+            "thread_id": "test-thread-id",
+        }
+    }
+
+
+@pytest.fixture
+def anthropic_config() -> dict[str, Any]:
+    """Config for Anthropic models."""
+    return {
+        "configurable": {
+            "customModelName": "claude-3-5-sonnet-20241022",
+            "assistant_id": "test-assistant-id",
+            "thread_id": "test-thread-id",
+        }
+    }
+
+
+@pytest.fixture
+def gemini_config() -> dict[str, Any]:
+    """Config for Gemini models."""
+    return {
+        "configurable": {
+            "customModelName": "gemini-2.0-flash-exp",
+            "assistant_id": "test-assistant-id",
+            "thread_id": "test-thread-id",
+        }
+    }
 
 
 # Markers for test categorization

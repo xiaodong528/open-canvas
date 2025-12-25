@@ -8,7 +8,6 @@
 
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AnyMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.store.base import BaseStore
@@ -16,7 +15,7 @@ from langgraph.types import RunnableConfig
 from pydantic import BaseModel, Field
 
 from ..types import ArtifactCodeV3, ArtifactMarkdownV3, ArtifactV3
-from ..utils import format_reflections
+from ..utils import format_reflections, get_model_from_config
 from .prompts import REFLECT_SYSTEM_PROMPT, REFLECT_USER_PROMPT
 from .state import ReflectionState
 
@@ -127,11 +126,8 @@ async def reflect(
         else:
             artifact_text = artifact_content.get("code", "")
 
-    # 4. 创建模型并绑定工具
-    model = ChatAnthropic(
-        model="claude-3-5-sonnet-20240620",
-        temperature=0,
-    )
+    # 4. 创建模型并绑定工具 (使用用户配置的模型)
+    model = get_model_from_config(config, temperature=0, is_tool_calling=True)
     model_with_tool = model.bind_tools(
         [GenerateReflections],
         tool_choice="GenerateReflections",

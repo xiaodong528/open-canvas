@@ -10,12 +10,12 @@ import os
 import uuid
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import RunnableConfig
 
 from ..constants import OC_SUMMARIZED_MESSAGE_KEY
-from ..utils import format_messages
+from ..utils import format_messages, get_model_from_config
 from .state import SummarizerState
 
 
@@ -45,7 +45,10 @@ Ensure you include ALL of the following messages in the summary. Do NOT follow a
 # ============================================
 
 
-async def summarize(state: SummarizerState) -> dict[str, Any]:
+async def summarize(
+    state: SummarizerState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
     """
     摘要节点
 
@@ -53,8 +56,8 @@ async def summarize(state: SummarizerState) -> dict[str, Any]:
 
     参考 TS: apps/agents/src/summarizer/index.ts
     """
-    # 1. 创建模型
-    model = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    # 1. 创建模型 (使用用户配置的模型)
+    model = get_model_from_config(config)
 
     # 2. 格式化消息
     messages_to_summarize = format_messages(state.get("messages", []))

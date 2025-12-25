@@ -10,12 +10,12 @@ import os
 from typing import Any
 
 from langchain_core.messages import AnyMessage
-from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import RunnableConfig
 from pydantic import BaseModel, Field
 
 from ..types import ArtifactCodeV3, ArtifactMarkdownV3, ArtifactV3
+from ..utils import get_model_from_config
 from .prompts import TITLE_SYSTEM_PROMPT, TITLE_USER_PROMPT
 from .state import ThreadTitleState
 
@@ -97,11 +97,8 @@ async def generate_title(
     if not thread_id:
         raise ValueError("open_canvas_thread_id not found in configurable")
 
-    # 2. 创建模型并绑定工具
-    model = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0,
-    )
+    # 2. 创建模型并绑定工具 (使用用户配置的模型)
+    model = get_model_from_config(config, temperature=0, is_tool_calling=True)
     model_with_tool = model.bind_tools(
         [GenerateTitle],
         tool_choice="GenerateTitle",

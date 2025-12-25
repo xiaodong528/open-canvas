@@ -51,12 +51,13 @@ async def reflect_node(
             "artifact": state.get("artifact"),
         }
 
-        # 准备配置，传递 assistant_id 以便反思图访问相同的记忆存储
+        # 准备配置，传递 assistant_id 和模型配置
+        configurable = config.get("configurable", {})
         reflection_config = {
             "configurable": {
-                "open_canvas_assistant_id": config.get("configurable", {}).get(
-                    "assistant_id"
-                ),
+                "open_canvas_assistant_id": configurable.get("assistant_id"),
+                "customModelName": configurable.get("customModelName"),
+                "modelConfig": configurable.get("modelConfig"),
             },
         }
 

@@ -203,12 +203,21 @@ async def summarizer(
     import os
     from langgraph_sdk import get_client
 
-    thread_id = config.get("configurable", {}).get("thread_id")
+    configurable = config.get("configurable", {})
+    thread_id = configurable.get("thread_id")
     if not thread_id:
         raise ValueError("Missing thread_id in summarizer config.")
 
     port = os.environ.get("PORT", "54367")
     client = get_client(url=f"http://localhost:{port}")
+
+    # 准备配置，传递模型配置
+    summarizer_config = {
+        "configurable": {
+            "customModelName": configurable.get("customModelName"),
+            "modelConfig": configurable.get("modelConfig"),
+        },
+    }
 
     # 创建新线程并启动 summarizer 图
     new_thread = await client.threads.create()
@@ -219,6 +228,7 @@ async def summarizer(
             "messages": state.get("_messages", []),
             "threadId": thread_id,  # 传递主线程 ID 供子图更新
         },
+        config=summarizer_config,
     )
 
     return {}

@@ -9,9 +9,9 @@
 from datetime import datetime
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
+from langgraph.types import RunnableConfig
 
-from ...utils import format_messages
+from ...utils import format_messages, get_model_from_config
 from ..state import WebSearchState
 
 
@@ -44,7 +44,10 @@ Respond ONLY with the search query, and nothing else."""
 # ============================================
 
 
-async def query_generator(state: WebSearchState) -> dict[str, Any]:
+async def query_generator(
+    state: WebSearchState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
     """
     查询生成节点
 
@@ -52,11 +55,8 @@ async def query_generator(state: WebSearchState) -> dict[str, Any]:
 
     参考 TS: apps/agents/src/web-search/nodes/query-generator.ts
     """
-    # 1. 创建模型
-    model = ChatAnthropic(
-        model="claude-3-5-sonnet-latest",
-        temperature=0,
-    )
+    # 1. 创建模型 (使用用户配置的模型)
+    model = get_model_from_config(config, temperature=0)
 
     # 2. 添加当前日期上下文
     # TS 使用 date-fns format(new Date(), "PPpp")

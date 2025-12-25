@@ -57,12 +57,13 @@ async def generate_title_node(
             "artifact": state.get("artifact"),
         }
 
-        # 准备配置，传递 thread_id 以便标题图更新正确的线程
+        # 准备配置，传递 thread_id 和模型配置
+        configurable = config.get("configurable", {})
         title_config = {
             "configurable": {
-                "open_canvas_thread_id": config.get("configurable", {}).get(
-                    "thread_id"
-                ),
+                "open_canvas_thread_id": configurable.get("thread_id"),
+                "customModelName": configurable.get("customModelName"),
+                "modelConfig": configurable.get("modelConfig"),
             },
         }
 

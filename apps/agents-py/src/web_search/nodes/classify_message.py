@@ -8,9 +8,10 @@
 
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
+from langgraph.types import RunnableConfig
 from pydantic import BaseModel, Field
 
+from ...utils import get_model_from_config
 from ..state import WebSearchState
 
 
@@ -47,7 +48,10 @@ class ClassifyMessage(BaseModel):
 # ============================================
 
 
-async def classify_message(state: WebSearchState) -> dict[str, Any]:
+async def classify_message(
+    state: WebSearchState,
+    config: RunnableConfig,
+) -> dict[str, Any]:
     """
     消息分类节点
 
@@ -55,11 +59,8 @@ async def classify_message(state: WebSearchState) -> dict[str, Any]:
 
     参考 TS: apps/agents/src/web-search/nodes/classify-message.ts
     """
-    # 1. 创建模型并使用结构化输出
-    model = ChatAnthropic(
-        model="claude-3-5-sonnet-latest",
-        temperature=0,
-    )
+    # 1. 创建模型并使用结构化输出 (使用用户配置的模型)
+    model = get_model_from_config(config, temperature=0, is_tool_calling=True)
     model_with_schema = model.with_structured_output(
         ClassifyMessage,
         method="function_calling",

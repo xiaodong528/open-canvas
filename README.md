@@ -69,16 +69,17 @@ Next, install the dependencies:
 yarn install
 ```
 
-After installing dependencies, copy the contents of both `.env.example` files in the root of the project, and in `apps/web` into `.env` and set the required values:
+After installing dependencies, copy the contents of both `.env.example` files in `apps/agents` and `apps/web` into `.env` and set the required values:
 
 ```bash
-# The root `.env` file will be read by the LangGraph server for the agents.
+# The `apps/agents/.env` file will be read by the LangGraph server for the agents.
+cd apps/agents/
 cp .env.example .env
 ```
 
 ```bash
 # The `apps/web/.env` file will be read by the frontend.
-cd apps/web/
+cd ../../apps/web/
 cp .env.example .env
 ```
 

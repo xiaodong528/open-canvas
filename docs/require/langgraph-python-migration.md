@@ -673,7 +673,7 @@ target-version = ["py312"]
     "summarizer": "src.summarizer.graph:graph",
     "web_search": "src.web_search.graph:graph"
   },
-  "env": "../.env",
+  "env": ".env",
   "http": {
     "cors": {
       "allow_origins": ["http://localhost:3000", "https://your-domain.com"],
@@ -688,7 +688,7 @@ target-version = ["py312"]
 > **注意**:
 >
 > - graphs 使用模块路径格式 `module.path:variable`，不是文件路径 `./path/to/file.py:variable`
-> - env 指向根目录的 `.env` 文件 (`../env`)，而不是 `apps/agents-py/.env`
+> - env 指向 `apps/agents-py/.env`
 
 > **CORS 说明**:
 >
@@ -853,7 +853,7 @@ langgraph dev --port 54367
 ### 6.5 环境变量配置
 
 ```bash
-# .env (根目录)
+# .env (apps/agents-py)
 
 # LLM API Keys
 OPENAI_API_KEY=sk-xxx

@@ -25,9 +25,9 @@
 ### 1. langgraph.json 配置对比
 | 检查项 | 状态 | 说明 |
 |-------|------|------|
-| 5 个图定义一致 | ✅ | 两端均包含 agent/reflection/thread_title/summarizer/web_search。`langgraph.json` `apps/agents-py/langgraph.json` |
+| 5 个图定义一致 | ✅ | 两端均包含 agent/reflection/thread_title/summarizer/web_search。`apps/agents/langgraph.json` `apps/agents-py/langgraph.json` |
 | 导出路径与入口点正确 | ✅ | TS 指向 `apps/agents/src/...`，Py 指向 `src.*.graph:graph` |
-| 环境变量引用正确 | ✅ | TS 用根 `.env`，Py 用 `../../.env` 指向根目录 |
+| 环境变量引用正确 | ✅ | TS 用 `apps/agents/.env`，Py 用 `apps/agents-py/.env` |
 
 ### 2. GraphInput/State 类型一致性
 | 检查项 | 状态 | 说明 |

@@ -8,7 +8,7 @@
     "summarizer": "src.summarizer.graph:graph",
     "web_search": "src.web_search.graph:graph"
   },
-  "env": "../../.env",
+  "env": ".env",
   "http": {
     "cors": {
       "allow_origins": ["http://localhost:3000", "https://smith.langchain.com"],

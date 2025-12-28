@@ -128,6 +128,7 @@ async def rewrite_artifact_theme(
         formatted_prompt = CHANGE_ARTIFACT_LANGUAGE_PROMPT.format(
             newLanguage=state.get("language"),
             artifactContent=full_markdown,
+            reflections=memories_as_string,
         )
     elif state.get("readingLevel") and state.get("readingLevel") != "pirate":
         # 更改阅读级别
@@ -136,11 +137,13 @@ async def rewrite_artifact_theme(
         formatted_prompt = CHANGE_ARTIFACT_READING_LEVEL_PROMPT.format(
             newReadingLevel=new_reading_level,
             artifactContent=full_markdown,
+            reflections=memories_as_string,
         )
     elif state.get("readingLevel") == "pirate":
         # 海盗模式
         formatted_prompt = CHANGE_ARTIFACT_TO_PIRATE_PROMPT.format(
             artifactContent=full_markdown,
+            reflections=memories_as_string,
         )
     elif state.get("artifactLength"):
         # 更改长度
@@ -149,17 +152,16 @@ async def rewrite_artifact_theme(
         formatted_prompt = CHANGE_ARTIFACT_LENGTH_PROMPT.format(
             newLength=new_length,
             artifactContent=full_markdown,
+            reflections=memories_as_string,
         )
     elif state.get("regenerateWithEmojis"):
         # 添加表情符号
         formatted_prompt = ADD_EMOJIS_TO_ARTIFACT_PROMPT.format(
             artifactContent=full_markdown,
+            reflections=memories_as_string,
         )
     else:
         raise ValueError("No theme selected")
-
-    # 添加反思信息
-    formatted_prompt = formatted_prompt.replace("{reflections}", memories_as_string)
 
     # 调用模型
     new_artifact_values = await small_model.ainvoke([

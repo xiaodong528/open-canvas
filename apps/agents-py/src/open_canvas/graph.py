@@ -71,6 +71,7 @@ def simple_token_calculator(
     ~ 4 chars per token, max tokens of 75000. 75000 * 4 = 300000
     """
     total_chars = _calculate_message_chars(state)
+
     if total_chars > CHARACTER_MAX:
         return "summarizer"
     return END

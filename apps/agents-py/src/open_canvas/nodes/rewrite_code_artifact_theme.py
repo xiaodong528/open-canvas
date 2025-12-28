@@ -103,25 +103,31 @@ async def rewrite_code_artifact_theme(
 
     if state.get("addComments"):
         # 添加注释
-        formatted_prompt = ADD_COMMENTS_TO_CODE_ARTIFACT_PROMPT
+        formatted_prompt = ADD_COMMENTS_TO_CODE_ARTIFACT_PROMPT.format(
+            artifactContent=code
+        )
     elif state.get("portLanguage"):
         # 移植语言
+        # 注意: PORT_LANGUAGE_CODE_ARTIFACT_PROMPT 同时包含 {newLanguage} 和 {artifactContent}
+        # 必须在同一次 .format() 调用中提供两个参数
         port_language = state.get("portLanguage")
         new_language = LANGUAGE_MAP.get(port_language, port_language)
         formatted_prompt = PORT_LANGUAGE_CODE_ARTIFACT_PROMPT.format(
-            newLanguage=new_language
+            newLanguage=new_language,
+            artifactContent=code,
         )
     elif state.get("addLogs"):
         # 添加日志
-        formatted_prompt = ADD_LOGS_TO_CODE_ARTIFACT_PROMPT
+        formatted_prompt = ADD_LOGS_TO_CODE_ARTIFACT_PROMPT.format(
+            artifactContent=code
+        )
     elif state.get("fixBugs"):
         # 修复 bug
-        formatted_prompt = FIX_BUGS_CODE_ARTIFACT_PROMPT
+        formatted_prompt = FIX_BUGS_CODE_ARTIFACT_PROMPT.format(
+            artifactContent=code
+        )
     else:
         raise ValueError("No theme selected")
-
-    # 插入代码内容
-    formatted_prompt = formatted_prompt.format(artifactContent=code)
 
     # 调用模型
     new_artifact_values = await small_model.ainvoke([

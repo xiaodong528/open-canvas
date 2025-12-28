@@ -1,198 +1,290 @@
 # Open Canvas
 
-[TRY IT OUT HERE](https://opencanvas.langchain.com/)
+一个开源的 AI 协作编辑应用，支持 Markdown 文档编辑、代码撰写和 React 组件实时渲染。
 
-![Screenshot of app](./static/screenshot.png)
+## 特性
 
-Open Canvas is an open source web application for collaborating with agents to better write documents. It is inspired by [OpenAI's "Canvas"](https://openai.com/index/introducing-canvas/), but with a few key differences.
+- **Markdown 文档编辑** - 基于 BlockNote 的富文本编辑器，支持实时预览
+- **代码撰写** - 基于 CodeMirror 的多语言代码编辑器
+- **React 代码渲染** - 有效的 React 代码可实时预览和运行
+- **AI 协作** - 与 LLM 对话生成和修改内容，支持快捷操作
+- **版本历史** - 完整的工件版本控制，支持回滚和对比
+- **多 LLM 支持** - OpenAI、Anthropic、Google Gemini、Fireworks、Groq、Ollama 等
 
-1. **Open Source**: All the code, from the frontend, to the content generation agent, to the reflection agent is open source and MIT licensed.
-2. **Built in memory**: Open Canvas ships out of the box with a [reflection agent](https://langchain-ai.github.io/langgraphjs/tutorials/reflection/reflection/) which stores style rules and user insights in a [shared memory store](https://langchain-ai.github.io/langgraphjs/concepts/memory/). This allows Open Canvas to remember facts about you across sessions.
-3. **Start from existing documents**: Open Canvas allows users to start with a blank text, or code editor in the language of their choice, allowing you to start the session with your existing content, instead of being forced to start with a chat interaction. We believe this is an ideal UX because many times you will already have some content to start with, and want to iterate on-top of it.
+## 快速开始
 
-## Features
+### 环境要求
 
-- **Memory**: Open Canvas has a built in memory system which will automatically generate reflections and memories on you, and your chat history. These are then included in subsequent chat interactions to give a more personalized experience.
-- **Custom quick actions**: Custom quick actions allow you to define your own prompts which are tied to your user, and persist across sessions. These then can be easily invoked through a single click, and apply to the artifact you're currently viewing.
-- **Pre-built quick actions**: There are also a series of pre-built quick actions for common writing and coding tasks that are always available.
-- **Artifact versioning**: All artifacts have a "version" tied to them, allowing you to travel back in time and see previous versions of your artifact.
-- **Code, Markdown, or both**: The artifact view allows for viewing and editing both code, and markdown. You can even have chats which generate code, and markdown artifacts, and switch between them.
-- **Live markdown rendering & editing**: Open Canvas's markdown editor allows you to view the rendered markdown while you're editing, without having to toggle back and fourth.
+- Python >= 3.12
+- Node.js >= 18
+- Yarn 1.22.22
+- [uv](https://docs.astral.sh/uv/) (Python 包管理器)
 
-## Setup locally
-
-This guide will cover how to setup and run Open Canvas locally. If you prefer a YouTube video guide, check out [this video](https://youtu.be/sBzcQYPMekc).
-
-### Prerequisites
-
-Open Canvas requires the following API keys and external services:
-
-#### Package Manager
-
-- [Yarn](https://yarnpkg.com/)
-
-#### APIs
-
-- [OpenAI API key](https://platform.openai.com/signup/)
-- [Anthropic API key](https://console.anthropic.com/)
-- (optional) [Google GenAI API key](https://aistudio.google.com/apikey)
-- (optional) [Fireworks AI API key](https://fireworks.ai/login)
-- (optional) [Groq AI API key](https://groq.com) - audio/video transcription
-- (optional) [FireCrawl API key](https://firecrawl.dev) - web scraping
-- (optional) [ExaSearch API key](https://exa.ai) - web search
-
-
-#### Authentication
-
-- [Supabase](https://supabase.com/) account for authentication
-
-#### LangGraph Server
-
-- [LangGraph CLI](https://langchain-ai.github.io/langgraph/cloud/reference/cli/) for running the graph locally
-
-#### LangSmith
-
-- [LangSmith](https://smith.langchain.com/) for tracing & observability
-
-### Installation
-
-First, clone the repository:
+### 一键启动（推荐）
 
 ```bash
-git clone https://github.com/langchain-ai/open-canvas.git
+# 1. 克隆项目
+git clone https://github.com/xiaodong528/open-canvas.git
 cd open-canvas
+
+# 2. 配置环境变量（见下方"环境配置"章节）
+cp apps/agents-py/.env.example apps/agents-py/.env
+cp apps/web/.env.example apps/web/.env
+
+# 3. 一键启动所有服务
+chmod +x init.sh
+./init.sh
 ```
 
-Next, install the dependencies:
+启动后访问：
+
+- **前端**: <http://localhost:3000>
+- **后端**: <http://localhost:54367>
+
+按 `Ctrl+C` 停止所有服务。
+
+### 手动启动
+
+如果需要分别控制各个服务：
 
 ```bash
+# 终端 1：启动后端 (LangGraph Python)
+cd apps/agents-py
+uv sync
+uv run langgraph dev --port 54367
+
+# 终端 2：启动前端 (Next.js)
+cd apps/web
 yarn install
-```
-
-After installing dependencies, copy the contents of both `.env.example` files in `apps/agents` and `apps/web` into `.env` and set the required values:
-
-```bash
-# The `apps/agents/.env` file will be read by the LangGraph server for the agents.
-cd apps/agents/
-cp .env.example .env
-```
-
-```bash
-# The `apps/web/.env` file will be read by the frontend.
-cd ../../apps/web/
-cp .env.example .env
-```
-
-Then, setup authentication with Supabase.
-
-### Setup Authentication
-
-After creating a Supabase account, visit your [dashboard](https://supabase.com/dashboard/projects) and create a new project.
-
-Next, navigate to the `Project Settings` page inside your project, and then to the `API` tag. Copy the `Project URL`, and `anon public` project API key. Paste them into the `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` environment variables in the `apps/web/.env` file.
-
-After this, navigate to the `Authentication` page, and the `Providers` tab. Make sure `Email` is enabled (also ensure you've enabled `Confirm Email`). You may also enable `GitHub`, and/or `Google` if you'd like to use those for authentication. (see these pages for documentation on how to setup each provider: [GitHub](https://supabase.com/docs/guides/auth/social-login/auth-github), [Google](https://supabase.com/docs/guides/auth/social-login/auth-google))
-
-#### Test authentication
-
-To verify authentication works, run `yarn dev` and visit [localhost:3000](http://localhost:3000). This should redirect you to the [login page](http://localhost:3000/auth/login). From here, you can either login with Google or GitHub, or if you did not configure these providers, navigate to the [signup page](http://localhost:3000/auth/signup) and create a new account with an email and password. This should then redirect you to a conformation page, and after confirming your email you should be redirected to the [home page](http://localhost:3000).
-
-### Setup LangGraph Server
-
-The first step to running Open Canvas locally is to build the application. This is because Open Canvas uses a monorepo setup, and requires workspace dependencies to be build so other packages/apps can access them.
-
-Run the following command from the root of the repository:
-
-```bash
-yarn build
-```
-
-Now we'll cover how to setup and run the LangGraph server locally.
-
-Navigate to `apps/agents` and run `yarn dev` (this runs `npx @langchain/langgraph-cli dev --port 54367`).
-
-```
-Ready!
-- 🚀 API: http://localhost:54367
-- 🎨 Studio UI: https://smith.langchain.com/studio?baseUrl=http://localhost:54367
-```
-
-After your LangGraph server is running, execute the following command inside `apps/web` to start the Open Canvas frontend:
-
-```bash
+yarn build  # 首次运行需要构建共享包
 yarn dev
+
+# 终端 3（可选）：共享包热更新
+cd packages/shared
+npx tsc --watch
 ```
 
-On initial load, compilation may take a little bit of time.
+## 环境配置
 
-Then, open [localhost:3000](http://localhost:3000) with your browser and start interacting!
+### 后端环境变量
 
-## LLM Models
+创建 `apps/agents-py/.env` 文件：
 
-Open Canvas is designed to be compatible with any LLM model. The current deployment has the following models configured:
+```bash
+# =============================================================================
+# LangSmith 追踪（推荐）
+# =============================================================================
+LANGSMITH_TRACING="true"
+LANGSMITH_API_KEY="your-langsmith-api-key"
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
 
-- **Anthropic Claude 3 Haiku 👤**: Haiku is Anthropic's fastest model, great for quick tasks like making edits to your document. Sign up for an Anthropic account [here](https://console.anthropic.com/).
-- **Fireworks Llama 3 70B 🦙**: Llama 3 is a SOTA open source model from Meta, powered by [Fireworks AI](https://fireworks.ai/). You can sign up for an account [here](https://fireworks.ai/login).
-- **OpenAI GPT 4o Mini 💨**: GPT 4o Mini is OpenAI's newest, smallest model. You can sign up for an API key [here](https://platform.openai.com/signup/).
+# =============================================================================
+# LLM API 密钥（至少配置一个）
+# =============================================================================
+# OpenAI
+OPENAI_API_KEY=""
 
-If you'd like to add a new model, follow these simple steps:
+# Anthropic (Claude)
+ANTHROPIC_API_KEY=""
 
-1. Add to or update the model provider variables in `packages/shared/src/models.ts`.
-2. Install the necessary package for the provider (e.g. `@langchain/anthropic`) inside `apps/agents`.
-3. Update the `getModelConfig` function in `apps/agents/src/agent/utils.ts` to include an `if` statement for your new model name and provider.
-4. Manually test by checking you can:
-   > - 4a. Generate a new artifact
-   > - 4b. Generate a followup message (happens automatically after generating an artifact)
-   > - 4c. Update an artifact via a message in chat
-   > - 4d. Update an artifact via a quick action
-   > - 4e. Repeat for text/code (ensure both work)
+# Google (Gemini)
+GOOGLE_API_KEY=""
 
-### Local Ollama models
+# Fireworks
+FIREWORKS_API_KEY=""
 
-Open Canvas supports calling local LLMs running on Ollama. This is not enabled in the hosted version of Open Canvas, but you can use this in your own local/deployed Open Canvas instance.
+# Groq
+GROQ_API_KEY=""
 
-To use a local Ollama model, first ensure you have [Ollama](https://ollama.com) installed, and a model that supports tool calling pulled (the default model is `llama3.3`).
+# =============================================================================
+# 外部服务
+# =============================================================================
+# Exa 搜索 API（用于网页搜索功能）
+EXA_API_KEY=""
 
-Next, start the Ollama server by running `ollama run llama3.3`.
+# =============================================================================
+# 可选配置
+# =============================================================================
+# 服务端口（默认 54367）
+PORT="54367"
 
-Then, set the `NEXT_PUBLIC_OLLAMA_ENABLED` environment variable to `true`, and the `OLLAMA_API_URL` environment variable to the URL of your Ollama server (defaults to `http://host.docker.internal:11434`. If you do not set a custom port when starting your Ollama server, you should not need to set this environment variable).
+# Ollama 本地 LLM
+# OLLAMA_API_URL="http://host.docker.internal:11434"
 
-> [!NOTE]
-> Open source LLMs are typically not as good at instruction following as proprietary models like GPT-4o or Claude Sonnet. Because of this, you may experience errors or unexpected behavior when using local LLMs.
+# Azure OpenAI（注意：变量必须以下划线开头）
+# _AZURE_OPENAI_API_KEY=""
+# _AZURE_OPENAI_API_INSTANCE_NAME=""
+# _AZURE_OPENAI_API_DEPLOYMENT_NAME=""
+# _AZURE_OPENAI_API_VERSION="2024-08-01-preview"
+```
 
-## Troubleshooting
+### 前端环境变量
 
-Below are some common issues you may run into if running Open Canvas yourself:
+创建 `apps/web/.env` 文件：
 
-- **I have the LangGraph server running successfully, and my client can make requests, but no text is being generated:** This can happen if you start & connect to multiple different LangGraph servers locally in the same browser. Try clearing the `oc_thread_id_v2` cookie and refreshing the page. This is because each unique LangGraph server has its own database where threads are stored, so a thread ID from one server will not be found in the database of another server.
+```bash
+# =============================================================================
+# Supabase 认证（必需）
+# =============================================================================
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 
-- **I'm getting 500 network errors when I try to make requests on the client:** Ensure you have the LangGraph server running, and you're making requests to the correct port. You can specify the port to use by passing the `--port <PORT>` flag to the `npx @langchain/langgraph-cli dev` command, and you can set the URL to make requests to by either setting the `LANGGRAPH_API_URL` environment variable, or by changing the fallback value of the `LANGGRAPH_API_URL` variable in `constants.ts`.
+# 文档上传（可以与上面相同）
+NEXT_PUBLIC_SUPABASE_URL_DOCUMENTS=
+NEXT_PUBLIC_SUPABASE_ANON_KEY_DOCUMENTS=
 
-- **I'm getting "thread ID not found" error toasts when I try to make requests on the client:** Ensure you have the LangGraph server running, and you're making requests to the correct port. You can specify the port to use by passing the `--port <PORT>` flag to the `npx @langchain/langgraph-cli dev` command, and you can set the URL to make requests to by either setting the `LANGGRAPH_API_URL` environment variable, or by changing the fallback value of the `LANGGRAPH_API_URL` variable in `constants.ts`.
+# =============================================================================
+# 模型可见性开关
+# =============================================================================
+NEXT_PUBLIC_OPENAI_ENABLED=true
+NEXT_PUBLIC_ANTHROPIC_ENABLED=true
+NEXT_PUBLIC_GEMINI_ENABLED=true
+NEXT_PUBLIC_FIREWORKS_ENABLED=true
+NEXT_PUBLIC_OLLAMA_ENABLED=false
+NEXT_PUBLIC_AZURE_ENABLED=false
+NEXT_PUBLIC_GROQ_ENABLED=false
 
-- **`Model name is missing in config.` error is being thrown when I make requests:** This error occurs when the `customModelName` is not specified in the config. You can resolve this by setting the `customModelName` field inside `config.configurable` to the name of the model you want to use when invoking the graph. See [this doc](https://langchain-ai.github.io/langgraphjs/how-tos/configuration/) on how to use configurable fields in LangGraph.
+# =============================================================================
+# API 配置
+# =============================================================================
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
 
-## Roadmap
+# =============================================================================
+# 可选服务
+# =============================================================================
+# 语音转录
+GROQ_API_KEY=
 
-### Features
+# 网页抓取
+FIRECRAWL_API_KEY=
+```
 
-Below is a list of features we'd like to add to Open Canvas in the near future:
+## 项目架构
 
-- **Render React in the editor**: Ideally, if you have Open Canvas generate React (or HTML) code, we should be able to render it live in the editor. **Edit**: This is in the planning stage now!
-- **Multiple assistants**: Users should be able to create multiple assistants, each having their own memory store.
-- **Give assistants custom 'tools'**: Once we've implemented `RemoteGraph` in LangGraph.js, users should be able to give assistants access to call their own graphs as tools. This means you could customize your assistant to have access to current events, your own personal knowledge graph, etc.
+### 目录结构
 
-Do you have a feature request? Please [open an issue](https://github.com/langchain-ai/open-canvas/issues/new)!
+```text
+open-canvas/
+├── apps/
+│   ├── agents-py/          # LangGraph Python 后端（主要）
+│   │   ├── src/
+│   │   │   ├── open_canvas/    # 主 Agent 图
+│   │   │   ├── reflection/     # 反思/记忆图
+│   │   │   ├── thread_title/   # 标题生成图
+│   │   │   ├── summarizer/     # 对话压缩图
+│   │   │   └── web_search/     # 网页搜索图
+│   │   ├── langgraph.json      # 图注册配置
+│   │   └── pyproject.toml      # Python 依赖
+│   │
+│   ├── agents/             # LangGraph TypeScript 后端（遗留）
+│   │
+│   └── web/                # Next.js 14 前端
+│       ├── src/
+│       │   ├── app/            # Next.js App Router
+│       │   ├── contexts/       # React Context（状态管理）
+│       │   ├── components/     # UI 组件
+│       │   └── workers/        # Web Workers（流处理）
+│       └── package.json
+│
+├── packages/
+│   ├── shared/             # 共享类型、模型配置
+│   └── evals/              # 评估测试框架
+│
+├── scripts/
+│   └── system-check.sh     # 系统检查脚本
+│
+├── init.sh                 # 一键启动脚本
+└── CLAUDE.md               # 开发指南
+```
 
-### Contributing
+### LangGraph 图
 
-We'd like to continue developing and improving Open Canvas, and want your help!
+| 图               | 入口点                           | 用途                        |
+| ---------------- | -------------------------------- | --------------------------- |
+| `agent`        | `src.open_canvas.graph:graph`  | 主代理：路由、工件生成/编辑 |
+| `reflection`   | `src.reflection.graph:graph`   | 用户洞察和写作风格记忆      |
+| `thread_title` | `src.thread_title.graph:graph` | 自动生成对话标题            |
+| `summarizer`   | `src.summarizer.graph:graph`   | 压缩长对话历史              |
+| `web_search`   | `src.web_search.graph:graph`   | Exa 驱动的网页搜索          |
 
-To start, there are a handful of GitHub issues with feature requests outlining improvements and additions to make the app's UX even better.
-There are three main labels:
+### 数据流
 
-- `frontend`: This label is added to issues which are UI focused, and do not require much if any work on the agent(s).
-- `ai`: This label is added to issues which are focused on improving the LLM agent(s).
-- `fullstack`: This label is added to issues which require touching both the frontend and agent code.
+```text
+用户输入 → GraphContext → ThreadProvider (LangGraph SDK)
+    → Python 后端 (:54367) → generate_path (路由)
+    → 节点执行 (generate_artifact, rewrite_artifact 等)
+    → 流式响应 → StreamWorker → GraphContext 更新 → React 渲染
+```
 
-If you have questions about contributing, please reach out to me via email: `brace(at)langchain(dot)dev`. For general bugs/issues with the code, please [open an issue on GitHub](https://github.com/langchain-ai/open-canvas/issues/new).
+## 开发指南
+
+### 代码质量
+
+```bash
+# TypeScript/JavaScript
+yarn lint                   # 检查所有包
+yarn lint:fix              # 自动修复
+yarn format                 # Prettier 格式化
+
+# Python
+cd apps/agents-py
+uv run ruff check src/     # Ruff 检查
+uv run ruff check --fix src/
+```
+
+### 测试
+
+```bash
+# Python 后端测试
+cd apps/agents-py
+uv run python -m pytest tests/              # 所有测试
+uv run python -m pytest tests/unit -v       # 单元测试
+uv run python -m pytest tests/integration   # 集成测试
+uv run python -m pytest -k "test_name"      # 指定测试
+
+# 前端评估测试
+cd apps/web
+yarn eval                   # 所有评估测试
+yarn eval -t "pattern"      # 匹配的测试
+
+# E2E 测试（需要服务运行）
+cd apps/web
+yarn playwright test        # 运行所有 E2E 测试
+yarn playwright test --ui   # UI 模式
+```
+
+### 系统检查
+
+```bash
+# 运行所有检查
+./scripts/system-check.sh
+
+# 运行指定检查
+./scripts/system-check.sh health graphs unit integration
+```
+
+## 故障排除
+
+| 问题                    | 原因                    | 解决方案                                    |
+| ----------------------- | ----------------------- | ------------------------------------------- |
+| 端口 54367/3000 被占用  | 旧进程未关闭            | `lsof -ti:54367 \| xargs kill -9`          |
+| "Thread not found" 错误 | 后端数据库不同          | 清除浏览器 `oc_thread_id_v2` cookie       |
+| 共享类型未更新          | TypeScript watch 未运行 | 启动 `tsc --watch` 在 `packages/shared` |
+| Supabase 连接失败       | 环境变量未配置          | 检查 `NEXT_PUBLIC_SUPABASE_*` 变量        |
+| 模型名称缺失            | 模型配置不匹配          | 确保 `customModelName` 在支持列表中       |
+
+## 支持的 LLM 模型
+
+| 提供商       | 模型示例                          | 环境变量              |
+| ------------ | --------------------------------- | --------------------- |
+| OpenAI       | gpt-4o, gpt-4.1, o3-mini, o4-mini | `OPENAI_API_KEY`    |
+| Anthropic    | claude-3.5-sonnet, claude-opus-4  | `ANTHROPIC_API_KEY` |
+| Google       | gemini-2.5-pro, gemini-2.5-flash  | `GOOGLE_API_KEY`    |
+| Fireworks    | llama-v3.3-70b, deepseek-v3       | `FIREWORKS_API_KEY` |
+| Groq         | deepseek-r1-distill-llama-70b     | `GROQ_API_KEY`      |
+| Ollama       | llama3.3（本地）                  | `OLLAMA_API_URL`    |
+| Azure OpenAI | 自定义部署                        | `_AZURE_OPENAI_*`   |
+
+## 许可证
+
+MIT License - 详见 [LICENSE](LICENSE) 文件

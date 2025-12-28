@@ -1392,12 +1392,21 @@ export function GraphProvider({ children }: { children: ReactNode }) {
     }
     lastSavedArtifact.current = castValues?.artifact;
 
+    // Preserve local artifact when switching to a new thread with no artifact.
+    // This handles the case where user creates a quick-start artifact locally
+    // and then triggers an action that creates a new thread.
+    const shouldPreserveLocalArtifact = !castValues?.artifact && artifact;
+
     if (!castValues?.messages?.length) {
       setMessages([]);
-      setArtifact(castValues?.artifact);
+      if (!shouldPreserveLocalArtifact) {
+        setArtifact(castValues?.artifact);
+      }
       return;
     }
-    setArtifact(castValues?.artifact);
+    if (!shouldPreserveLocalArtifact) {
+      setArtifact(castValues?.artifact);
+    }
     setMessages(
       castValues.messages.map((msg: Record<string, any>) => {
         if (msg.response_metadata?.langSmithRunURL) {

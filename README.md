@@ -1,14 +1,24 @@
 # Open Canvas
 
-一个开源的 AI 协作编辑应用，支持 Markdown 文档编辑、代码撰写和 React 组件实时渲染。
+![Screenshot of app](./static/screenshot.png)
+
+一个开源的 AI 协作编辑应用，支持 Markdown 文档编辑、代码撰写和 React 组件实时渲染。灵感来源于 [OpenAI Canvas](https://openai.com/index/introducing-canvas/)，但有以下关键差异。
+
+## 为什么选择 Open Canvas？
+
+1. **开源**: 从前端到内容生成代理、反思代理，全部代码开源且采用 MIT 许可证。
+2. **内置记忆**: 内置[反思代理](https://langchain-ai.github.io/langgraphjs/tutorials/reflection/reflection/)，将写作风格规则和用户洞察存储在[共享记忆存储](https://langchain-ai.github.io/langgraphjs/concepts/memory/)中，让 Open Canvas 能够跨会话记住你的偏好。
+3. **从现有文档开始**: 允许用户从空白编辑器或已有内容开始，而不是强制从聊天交互开始。这是理想的用户体验，因为很多时候你已经有一些内容，想要在此基础上迭代。
 
 ## 特性
 
-- **Markdown 文档编辑** - 基于 BlockNote 的富文本编辑器，支持实时预览
-- **代码撰写** - 基于 CodeMirror 的多语言代码编辑器
+- **记忆系统** - 自动生成关于你和聊天历史的反思和记忆，在后续对话中提供更个性化的体验
+- **自定义快捷操作** - 定义与用户绑定的自定义提示词，跨会话持久保存，一键应用到当前工件
+- **预设快捷操作** - 常用写作和编码任务的预设快捷操作，随时可用
+- **工件版本控制** - 所有工件都有版本记录，支持回溯查看历史版本
+- **代码与 Markdown** - 工件视图支持代码和 Markdown 的查看与编辑，可在两者之间切换
+- **实时 Markdown 渲染** - 边编辑边查看渲染后的 Markdown，无需来回切换
 - **React 代码渲染** - 有效的 React 代码可实时预览和运行
-- **AI 协作** - 与 LLM 对话生成和修改内容，支持快捷操作
-- **版本历史** - 完整的工件版本控制，支持回滚和对比
 - **多 LLM 支持** - OpenAI、Anthropic、Google Gemini、Fireworks、Groq、Ollama 等
 
 ## 快速开始
@@ -38,8 +48,8 @@ chmod +x init.sh
 
 启动后访问：
 
-- **前端**: <http://localhost:3000>
-- **后端**: <http://localhost:54367>
+- **前端**: [http://localhost:3000](http://localhost:3000)
+- **后端**: [http://localhost:54367](http://localhost:54367)
 
 按 `Ctrl+C` 停止所有服务。
 
@@ -158,6 +168,61 @@ GROQ_API_KEY=
 # 网页抓取
 FIRECRAWL_API_KEY=
 ```
+
+## Supabase 认证设置
+
+### 创建 Supabase 项目
+
+1. 注册 [Supabase](https://supabase.com/) 账户
+2. 访问 [Dashboard](https://supabase.com/dashboard/projects) 创建新项目
+
+### 获取 API 密钥
+
+1. 进入项目的 `Project Settings` 页面
+2. 点击 `API` 标签
+3. 复制 `Project URL` 和 `anon public` 项目 API 密钥
+4. 粘贴到 `apps/web/.env` 文件的对应变量中：
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+### 配置认证提供商
+
+1. 进入 `Authentication` 页面，点击 `Providers` 标签
+2. 确保 `Email` 已启用（同时确保启用 `Confirm Email`）
+3. 可选启用 `GitHub` 和/或 `Google`：
+   - [GitHub 认证配置](https://supabase.com/docs/guides/auth/social-login/auth-github)
+   - [Google 认证配置](https://supabase.com/docs/guides/auth/social-login/auth-google)
+
+### 验证认证功能
+
+1. 运行 `yarn dev` 并访问 [localhost:3000](http://localhost:3000)
+2. 页面应重定向到[登录页面](http://localhost:3000/auth/login)
+3. 使用 Google/GitHub 登录，或访问[注册页面](http://localhost:3000/auth/signup)创建账户
+4. 确认邮箱后应重定向到[首页](http://localhost:3000)
+
+## Ollama 本地模型
+
+Open Canvas 支持调用本地 Ollama 运行的 LLM。托管版本未启用此功能，但你可以在本地/自部署实例中使用。
+
+### 配置步骤
+
+1. 安装 [Ollama](https://ollama.com)
+2. 拉取支持工具调用的模型（默认使用 `llama3.3`）：
+
+   ```bash
+   ollama pull llama3.3
+   ```
+3. 启动 Ollama 服务：
+
+   ```bash
+   ollama run llama3.3
+   ```
+4. 设置环境变量：
+
+   - `NEXT_PUBLIC_OLLAMA_ENABLED=true`（在 `apps/web/.env`）
+   - `OLLAMA_API_URL`（默认 `http://host.docker.internal:11434`，通常无需修改）
+
+> **注意**: 开源 LLM 的指令遵循能力通常不如 GPT5 或 Claude Sonnet 等专有模型。使用本地 LLM 时可能会遇到错误或意外行为。
 
 ## 项目架构
 

@@ -74,38 +74,23 @@ jobs:
           path: src
 
   dev-server-check:
-    name: Check dev server startup
+    name: Check Python dev server startup
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/agents
+        working-directory: apps/agents-py
     steps:
       - uses: actions/checkout@v4
-      - name: Enable Corepack
-        run: corepack enable
-        working-directory: .
-      - name: Use Node.js 18.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-          cache: "yarn"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+      - name: Set up Python
+        run: uv python install 3.12
       - name: Install dependencies
-        run: yarn install --immutable
-        working-directory: .
-      - name: Build all packages
-        run: yarn build
-        working-directory: .
-      - name: Build dev server check script
-        run: yarn tsc --module commonjs --outDir ./dist/scripts ./scripts/check-dev-server.ts
-      - name: Rename compiled script to .cjs
-        run: mv ./dist/scripts/check-dev-server.js ./dist/scripts/check-dev-server.cjs
+        run: uv sync
       - name: Create .env file for dev server check
-        # .env needs to be in the root of the project
-        run: touch ../../.env
+        run: touch .env
       - name: Run dev server check
-        run: node ./dist/scripts/check-dev-server.cjs
-        env:
-          NODE_ENV: development
+        run: uv run python scripts/check-dev-server.py
         timeout-minutes: 2
 
   build-check:

@@ -2,10 +2,15 @@ import { expect } from "vitest";
 import * as ls from "langsmith/vitest";
 import { z } from "zod";
 import { ChatOpenAI } from "@langchain/openai";
-
-import { graph } from "@opencanvas/agents/dist/open-canvas/index";
+import {
+  createEvalsClient,
+  DEFAULT_MODEL_CONFIG,
+  getArtifactContent,
+} from "./utils";
 import { QUERY_ROUTING_DATA } from "./data/query_routing.js";
 import { CODEGEN_DATA } from "./data/codegen.js";
+
+const client = createEvalsClient();
 
 ls.describe("query routing", () => {
   ls.test(
@@ -15,14 +20,42 @@ ls.describe("query routing", () => {
       referenceOutputs: QUERY_ROUTING_DATA.referenceOutputs,
     },
     async ({ inputs, referenceOutputs }) => {
-      const generatePathNode = graph.nodes.generatePath;
-      const res = await generatePathNode.invoke(inputs, {
-        configurable: {
-          customModelName: "gpt-4o-mini",
-        },
-      });
-      ls.logOutputs(res);
-      expect(res).toEqual(referenceOutputs);
+      const thread = await client.threads.create();
+
+      try {
+        // 使用 streamMode: "events" 捕获 generatePath 节点输出
+        // 重要: cleanState 节点会清空 next 为 None，所以必须捕获中间输出
+        const stream = client.runs.stream(thread.thread_id, "agent", {
+          input: inputs,
+          streamMode: "events",
+          config: {
+            configurable: {
+              customModelName: DEFAULT_MODEL_CONFIG.customModelName,
+            },
+          },
+        });
+
+        let capturedNext: string | null = null;
+        for await (const chunk of stream) {
+          // 捕获 generatePath 节点的输出
+          // 使用类型断言因为 SDK 类型定义不完整
+          const event = chunk as { event: string; name?: string; data?: any };
+          if (event.event === "on_chain_end" && event.name === "generatePath") {
+            capturedNext = event.data?.output?.next ?? null;
+            break;
+          }
+        }
+
+        ls.logOutputs({ next: capturedNext });
+        expect(capturedNext).toEqual(referenceOutputs.next);
+      } finally {
+        // Clean up
+        try {
+          await client.threads.delete(thread.thread_id);
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
     }
   );
 });
@@ -71,20 +104,54 @@ ls.describe("codegen", () => {
       referenceOutputs: {},
     },
     async ({ inputs }) => {
-      const generateArtifactNode = graph.nodes.generateArtifact;
-      const res = await generateArtifactNode.invoke(inputs, {
-        configurable: {
-          customModelName: "gpt-4o-mini",
-        },
-      });
-      ls.logOutputs(res);
-      const generatedCode = (res.artifact?.contents[0] as any).code;
-      expect(generatedCode).toBeDefined();
-      const wrappedEvaluator = ls.wrapEvaluator(qualityEvaluator);
-      await wrappedEvaluator({
-        inputs: inputs.messages[0].content,
-        outputs: generatedCode,
-      });
+      const thread = await client.threads.create();
+
+      try {
+        // 使用 streamMode: "events" 捕获 generateArtifact 节点输出
+        const stream = client.runs.stream(thread.thread_id, "agent", {
+          input: inputs,
+          streamMode: "events",
+          config: {
+            configurable: {
+              customModelName: DEFAULT_MODEL_CONFIG.customModelName,
+            },
+          },
+        });
+
+        let artifactOutput: any = null;
+        for await (const chunk of stream) {
+          // 捕获 generateArtifact 节点的输出
+          // 使用类型断言因为 SDK 类型定义不完整
+          const event = chunk as { event: string; name?: string; data?: any };
+          if (
+            event.event === "on_chain_end" &&
+            event.name === "generateArtifact"
+          ) {
+            artifactOutput = event.data?.output?.artifact;
+            break;
+          }
+        }
+
+        ls.logOutputs({ artifact: artifactOutput });
+
+        // Python 端 artifact 结构: artifact.contents[0].code
+        const content = getArtifactContent(artifactOutput);
+        const generatedCode = content?.code;
+        expect(generatedCode).toBeDefined();
+
+        const wrappedEvaluator = ls.wrapEvaluator(qualityEvaluator);
+        await wrappedEvaluator({
+          inputs: inputs.messages[0].content,
+          outputs: generatedCode!,
+        });
+      } finally {
+        // Clean up
+        try {
+          await client.threads.delete(thread.thread_id);
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
     }
   );
 });

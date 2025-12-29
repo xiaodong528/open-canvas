@@ -7,14 +7,9 @@
 
 import { expect } from "vitest";
 import * as ls from "langsmith/vitest";
-import { Client } from "@langchain/langgraph-sdk";
+import { createEvalsClient, PYTHON_BACKEND_URL } from "../utils";
 
-// Python backend URL - defaults to local development server
-const PYTHON_BACKEND_URL =
-  process.env.LANGGRAPH_API_URL || "http://localhost:54367";
-
-// Create a client that connects directly to the Python backend
-const client = new Client({ apiUrl: PYTHON_BACKEND_URL });
+const client = createEvalsClient();
 
 ls.describe("Python Backend Health", () => {
   ls.test(

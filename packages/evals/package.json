@@ -16,7 +16,7 @@
   "dependencies": {
     "@langchain/core": "^0.3.71",
     "@langchain/openai": "^0.4.2",
-    "@opencanvas/agents": "*",
+    "@langchain/langgraph-sdk": "^0.0.107",
     "langsmith": "^0.3.60",
     "zod": "^3.24.1",
     "dotenv": "^16.4.7"

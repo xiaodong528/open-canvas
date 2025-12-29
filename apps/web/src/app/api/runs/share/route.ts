@@ -39,8 +39,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (!process.env.LANGSMITH_API_KEY) {
+    return new NextResponse(
+      JSON.stringify({ error: "LangSmith API key not configured" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const lsClient = new Client({
     apiKey: process.env.LANGSMITH_API_KEY,
+    apiUrl: process.env.LANGSMITH_ENDPOINT,
   });
 
   try {

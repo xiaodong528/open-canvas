@@ -13,8 +13,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!process.env.LANGSMITH_API_KEY) {
+      return NextResponse.json(
+        { error: "LangSmith API key not configured" },
+        { status: 500 }
+      );
+    }
+
     const lsClient = new Client({
       apiKey: process.env.LANGSMITH_API_KEY,
+      apiUrl: process.env.LANGSMITH_ENDPOINT,
     });
 
     const feedback = await lsClient.createFeedback(runId, feedbackKey, {
@@ -54,8 +62,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    if (!process.env.LANGSMITH_API_KEY) {
+      return new NextResponse(
+        JSON.stringify({ error: "LangSmith API key not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const lsClient = new Client({
       apiKey: process.env.LANGSMITH_API_KEY,
+      apiUrl: process.env.LANGSMITH_ENDPOINT,
     });
 
     const runFeedback: Feedback[] = [];

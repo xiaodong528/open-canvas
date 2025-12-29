@@ -411,13 +411,11 @@ def get_model_from_config(
 
         # 重要: 覆盖 ChatAnthropic 默认的 top_p/top_k 避免 API 错误
         # ChatAnthropic 默认设置 top_p=1, top_k=1，这会与某些 API 配置冲突
-        # 通过 model_kwargs 显式设置为 None 来覆盖
+        # 将 top_p/top_k 作为顶级参数设置为 None 来覆盖默认值
         anthropic_kwargs = {
             "model": model_name,
-            "model_kwargs": {
-                "top_p": None,
-                "top_k": None,
-            },
+            "top_p": None,
+            "top_k": None,
         }
         if not is_reasoning_model and final_temperature is not None:
             anthropic_kwargs["temperature"] = final_temperature
